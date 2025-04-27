@@ -1,11 +1,14 @@
 // src/components/ProfileForm.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Import useEffect
 import axios from 'axios';
+// We assume ProtectedRoute handles ensuring user is logged in
+// and AuthContext interceptor handles adding the token.
 import './ProfileForm.css';
 
 const ProfileForm = () => {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(1); // Assuming multi-step structure remains
   const [formData, setFormData] = useState({
+    // Initialize with default structure and empty/default values
     age: '',
     height_cm: '',
     current_weight_kg: '',
@@ -17,14 +20,74 @@ const ProfileForm = () => {
     dietary_preferences: '',
     food_allergies: '',
     disliked_foods: '',
-    activity_level: 'sedentary',
+    activity_level: 'sedentary', // Ensure this matches a valid <option> value
     weight_loss_goal_kg: '',
     desired_loss_rate: '',
   });
-  const [error, setError] = useState('');
+  // Renamed original 'error' to be specific to submission errors
+  const [submitError, setSubmitError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const totalSteps = 13;
+  const totalSteps = 13; // Keep if using multi-step
 
+  // --- State for data fetching ---
+  const [isFetching, setIsFetching] = useState(true); // Start loading initially
+  const [fetchError, setFetchError] = useState('');
+  // --- End state for data fetching ---
+
+  // --- useEffect to Fetch Profile Data ---
+  useEffect(() => {
+    // Define the async function to fetch data
+    const fetchProfileData = async () => {
+      setIsFetching(true); // Start loading
+      setFetchError('');    // Clear previous fetch errors
+      setSuccessMessage('');// Clear previous success messages
+      setSubmitError(''); // Clear previous submit errors
+
+      try {
+        console.log("Fetching profile data...");
+        // Make GET request to the protected profile endpoint.
+        // The Axios interceptor from AuthContext should add the Auth header.
+        const response = await axios.get('/api/users/profile/');
+        const profileData = response.data;
+        console.log("Profile data received:", profileData);
+
+        // Update local form state with fetched data, handling nulls
+        // Create a copy of the current state structure
+        let updatedFormData = { ...formData };
+        // Iterate over the keys defined in the initial formData state
+        for (const key in updatedFormData) {
+          // Check if the fetched data has this key
+          if (profileData.hasOwnProperty(key)) {
+            const backendValue = profileData[key];
+            // Handle null values from backend: map to empty string or boolean default
+            if (backendValue === null) {
+              updatedFormData[key] = typeof updatedFormData[key] === 'boolean' ? false : '';
+            } else {
+              // Otherwise, use the value from the backend
+              updatedFormData[key] = backendValue;
+            }
+          }
+          // If key exists in formData but not profileData, it keeps its default initial value
+        }
+
+        setFormData(updatedFormData); // Update the state
+
+      } catch (error) {
+        console.error('Failed to fetch profile data:', error.response ? error.response.data : error.message);
+        setFetchError('Failed to load your profile information. Please try refreshing the page or contact support if the problem persists.');
+        // You might want specific checks here, e.g., if error is 401, trigger logout via context?
+      } finally {
+        setIsFetching(false); // Stop loading regardless of success/error
+      }
+    };
+
+    fetchProfileData(); // Call the fetch function
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array means this effect runs only once when component mounts
+  // --- End useEffect ---
+
+  // --- Form Navigation and Change Handling (Keep as is for now) ---
   const nextStep = () => setStep(prevStep => prevStep < totalSteps ? prevStep + 1 : prevStep);
   const prevStep = () => setStep(prevStep => prevStep > 1 ? prevStep - 1 : prevStep);
 
@@ -35,199 +98,108 @@ const ProfileForm = () => {
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
+  // --- End Form Navigation ---
 
+  // --- Form Submission ---
+  // TODO: Update this function to use axios.patch or axios.put
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setError('');
+    setSubmitError('');
     setSuccessMessage('');
+    // Add submitting state maybe: const [isSubmitting, setIsSubmitting] = useState(false);
+    // setIsSubmitting(true);
+
     try {
-      // TODO: Add authentication header
-      // const token = localStorage.getItem('token'); // Example
-      // const response = await axios.post('/api/users/profile/', formData, {
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
-      const response = await axios.post('/api/users/profile/', formData); // Using placeholder endpoint for now
-      console.log('Profile updated:', response.data);
+      // IMPORTANT: Change this to PATCH or PUT for updates!
+      console.log("Submitting profile data:", formData);
+      // const response = await axios.patch('/api/users/profile/', formData); // Use PATCH for partial updates
+      const response = await axios.post('/api/users/profile/', formData); // Placeholder - MUST CHANGE
+      console.log('Profile update response:', response.data);
       setSuccessMessage('Profile updated successfully!');
-      // Optionally reset form or redirect user
+
     } catch (error) {
-      setError('Failed to update profile. Please try again.');
       console.error('Profile update error:', error.response ? error.response.data : error.message);
+      // TODO: Improve error parsing for submission errors
+      setSubmitError('Failed to update profile. Please check your inputs and try again.');
+
+    } finally {
+      // setIsSubmitting(false);
     }
   };
+  // --- End Form Submission ---
 
+
+  // --- Rendering Logic ---
   const renderForm = () => {
+    // If keeping multi-step, ensure each input uses the correct formData field
+    // Example for step 1 (Age) - Add disabled={isFetching} to inputs
     switch (step) {
-      case 1:
-        return (
-          <div className={`form-step ${step === 1 ? 'active' : ''}`}>
-            <div>
-              <label htmlFor="age">Age:</label>
-              <input type="number" id="age" name="age" value={formData.age} onChange={handleChange} required />
-            </div>
-          </div>
-        );
-      case 2:
-        return (
-          <div className={`form-step ${step === 2 ? 'active' : ''}`}>
-            <div>
-              <label htmlFor="height_cm">Height (cm):</label>
-              <input type="number" id="height_cm" name="height_cm" value={formData.height_cm} onChange={handleChange} required />
-            </div>
-          </div>
-        );
-      case 3:
-        return (
-          <div className={`form-step ${step === 3 ? 'active' : ''}`}>
-            <div>
-              <label htmlFor="current_weight_kg">Current Weight (kg):</label>
-              <input type="number" id="current_weight_kg" name="current_weight_kg" value={formData.current_weight_kg} onChange={handleChange} required />
-            </div>
-          </div>
-        );
-      case 4:
-        return (
-          <div className={`form-step ${step === 4 ? 'active' : ''}`}>
-            <div>
-              <label htmlFor="country">Country:</label>
-              <input type="text" id="country" name="country" value={formData.country} onChange={handleChange} required />
-            </div>
-          </div>
-        );
-      case 5:
-        return (
-          <div className={`form-step ${step === 5 ? 'active' : ''}`}>
-            <div>
-              <label htmlFor="province">Province:</label>
-              <input type="text" id="province" name="province" value={formData.province} onChange={handleChange} required />
-            </div>
-          </div>
-        );
-      case 6:
-        return (
-          <div className={`form-step ${step === 6 ? 'active' : ''}`}>
-            <div>
-              <label htmlFor="physical_issues">Any physical issues, injuries, or limitations? (e.g., bad knees, back pain)</label>
-              <textarea id="physical_issues" name="physical_issues" value={formData.physical_issues} onChange={handleChange} />
-            </div>
-          </div>
-        );
-      case 7:
-        return (
-          <div className={`form-step ${step === 7 ? 'active' : ''}`}>
-            <div>
-              <label htmlFor="has_gym_membership">Do you have a gym membership?</label>
-              <input type="checkbox" id="has_gym_membership" name="has_gym_membership" checked={formData.has_gym_membership} onChange={handleChange} />
-            </div>
-          </div>
-        );
-      case 8:
-        return (
-          <div className={`form-step ${step === 8 ? 'active' : ''}`}>
-            <div>
-              <label htmlFor="home_equipment">What fitness equipment do you have available at home? (e.g., dumbbells, resistance bands, treadmill)</label>
-              <textarea id="home_equipment" name="home_equipment" value={formData.home_equipment} onChange={handleChange} />
-            </div>
-          </div>
-        );
-      case 9:
-        return (
-          <div className={`form-step ${step === 9 ? 'active' : ''}`}>
-            <div>
-              <label htmlFor="dietary_preferences">Dietary Preferences (e.g., vegetarian, vegan, keto, low-carb, allergies):</label>
-              <input type="text" id="dietary_preferences" name="dietary_preferences" value={formData.dietary_preferences} onChange={handleChange} />
-            </div>
-          </div>
-        );
-      case 10:
-        return (
-          <div className={`form-step ${step === 10 ? 'active' : ''}`}>
-            <div>
-              <label htmlFor="food_allergies">Food Allergies:</label>
-              <textarea id="food_allergies" name="food_allergies" value={formData.food_allergies} onChange={handleChange} />
-            </div>
-          </div>
-        );
-      case 11:
-        return (
-          <div className={`form-step ${step === 11 ? 'active' : ''}`}>
-            <div>
-              <label htmlFor="disliked_foods">Any specific foods you dislike or prefer not to eat?</label>
-              <textarea id="disliked_foods" name="disliked_foods" value={formData.disliked_foods} onChange={handleChange} />
-            </div>
-          </div>
-        );
-      case 12:
-        return (
-          <div className={`form-step ${step === 12 ? 'active' : ''}`}>
-            <div>
-              <label htmlFor="activity_level">Describe your typical daily activity level (excluding planned exercise):</label>
-              <select name="activity_level" value={formData.activity_level} onChange={handleChange}>
-                <option value="sedentary">Sedentary (little to no activity, desk job)</option>
-                <option value="lightly_active">Lightly Active (light exercise/sports 1-3 days/week)</option>
-                <option value="moderately_active">Moderately Active (moderate exercise/sports 3-5 days/week)</option>
-                <option value="very_active">Very Active (hard exercise/sports 6-7 days a week)</option>
-                <option value="extra_active">Extra Active (very hard exercise/sports & physical job or 2x training)</option>
-              </select>
-            </div>
-          </div>
-        );
-      case 13:
-        return (
-          <div className={`form-step ${step === 13 ? 'active' : ''}`}>
-            <div>
-              <label htmlFor="weight_loss_goal_kg">What is your target weight loss goal (in kg)?</label>
-              <input type="number" id="weight_loss_goal_kg" name="weight_loss_goal_kg" value={formData.weight_loss_goal_kg} onChange={handleChange} />
-            </div>
-            <div>
-              <label htmlFor="desired_loss_rate">What is your desired rate of weight loss per week? (e.g., 0.5 kg, 1 kg)</label>
-              {/* Consider making this a dropdown for common rates */}
-              <input type="text" id="desired_loss_rate" name="desired_loss_rate" value={formData.desired_loss_rate} onChange={handleChange} />
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
+         case 1:
+           return (
+             <div className={`form-step ${step === 1 ? 'active' : ''}`}>
+               <div>
+                 <label htmlFor="age">Age:</label>
+                 <input type="number" id="age" name="age" value={formData.age} onChange={handleChange} required disabled={isFetching} />
+               </div>
+             </div>
+           );
+        // ... other cases for steps 2-13, ensuring 'value={formData.fieldName}' and 'disabled={isFetching}'
+        // Default case or handling for single-step form needed if not multi-step
+        default:
+             // Placeholder: Render all fields if not using steps or step is invalid
+             // You'll need to structure this properly if removing steps
+            return <div>Implement form rendering here (or use multi-step cases)</div>;
+       }
   };
 
-  const progressPercentage = totalSteps > 1 ? ((step - 1) / (totalSteps - 1)) * 100 : 0; // Avoid division by zero if totalSteps is 1
+  // --- Main Component Return ---
+  // Display loading indicator while fetching
+  if (isFetching) {
+    return <div>Loading your profile...</div>;
+  }
 
+  // Display error if fetching failed
+  if (fetchError) {
+    return <div className="profile-form-container"><p className="error-message">{fetchError}</p></div>;
+  }
+
+  // Render the form if fetching succeeded
   return (
     <div className="profile-form-container">
       <h2>Your Profile</h2>
-      <div className="progress-bar-container">
-        <div className="progress-bar" style={{ width: `${progressPercentage}%` }}></div>
-        <span>Step {step} of {totalSteps}</span>
-      </div>
-
-      {error && <p className="error-message">{error}</p>}
+      {/* Display submission status messages */}
+      {submitError && <p className="error-message">{submitError}</p>}
       {successMessage && <p className="success-message">{successMessage}</p>}
 
       <div className="form-content-wrapper">
-        {/* Use onSubmit on the form itself, not a button */}
+        {/* Optional: Add progress bar for multi-step */}
+        {/* <div className="progress-bar-container">...</div> */}
+
         <form onSubmit={handleSubmit} className={`step-${step}`}>
-          {renderForm()}
+          {renderForm()} {/* Renders the current step */}
+
+          {/* Navigation/Submit Buttons */}
           <div className="navigation-buttons">
-            {step > 1 && ( // Corrected conditional rendering for Previous button
-              <button type="button" onClick={prevStep} className="btn-prev">
+            {step > 1 && (
+              <button type="button" onClick={prevStep} className="btn-prev" disabled={isFetching /* Add || isSubmitting */}>
                 Previous
               </button>
             )}
-            {step < totalSteps && ( // Show Next button if not the last step
-              <button type="button" onClick={nextStep} className="btn-next">
+            {step < totalSteps && (
+              <button type="button" onClick={nextStep} className="btn-next" disabled={isFetching /* Add || isSubmitting */}>
                 Next
               </button>
             )}
-            {step === totalSteps && ( // Show Submit button only on the last step
-              <button type="submit" className="btn-submit">
-                Submit Profile
+            {step === totalSteps && (
+              <button type="submit" className="btn-submit" disabled={isFetching /* Add || isSubmitting */}>
+                 {/* {isSubmitting ? 'Updating...' : 'Update Profile'} */}
+                 Update Profile
               </button>
             )}
           </div>
-        </form> {/* Added closing form tag */}
-      </div> {/* Added closing div tag for form-content-wrapper */}
-    </div> // Added closing div tag for profile-form-container
+        </form>
+      </div>
+    </div>
   );
 };
 
