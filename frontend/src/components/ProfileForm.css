@@ -1,0 +1,209 @@
+/* src/components/ProfileForm.css */
+.profile-form-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    /* Remove or comment out the line below */
+    /* min-height: 400px; */ /* Let height be determined by content */
+  }
+  
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .error-message {
+    color: red;
+    margin-bottom: 10px;
+    text-align: center; /* Center messages */
+  }
+  
+  .success-message {
+    color: green;
+    margin-bottom: 10px;
+    text-align: center; /* Center messages */
+  }
+  
+  .progress-bar-container {
+    background-color: #f3f3f3;
+    height: 15px; /* Slightly taller bar */
+    border-radius: 8px; /* Match height */
+    overflow: hidden;
+    margin-bottom: 20px; /* Space below the progress bar */
+    position: relative; /* For positioning the text */
+    border: 1px solid #ddd; /* Optional border */
+  }
+  
+  .progress-bar {
+    background-color: #007bff; /* Example fitness color */
+    height: 100%;
+    border-radius: 8px;
+    transition: width 0.4s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8em;
+    font-weight: bold;
+    overflow: hidden; /* Hide text if bar is too small */
+    white-space: nowrap; /* Prevent text wrapping */
+  }
+  
+  /* Optional: Add text inside the progress bar itself */
+  /*
+  .progress-bar::after {
+    content: attr(data-label);
+  }
+  */
+  
+  /* Alternative: Text overlaying the container */
+  .progress-bar-container span {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    top: -1px; /* Adjust vertical position */
+    left: 0;
+    font-size: 0.8em;
+    color: #555; /* Or a contrasting color */
+    line-height: 15px; /* Match container height */
+    z-index: 1; /* Ensure it's above the bar if needed */
+  }
+  
+  
+  .form-content-wrapper {
+    flex-grow: 1; /* Allow the form content to take up available space */
+    display: flex;
+    flex-direction: column;
+    /* Change justify-content if you removed min-height and still want buttons close to content */
+    /* justify-content: flex-start; */ /* Keeps buttons closer to content */
+    justify-content: space-between; /* Keeps buttons at bottom (if container grows) */
+  }
+  
+  
+  .form-step {
+    /* Remove fixed height/min-height from here too if added */
+    /* transition: opacity 0.3s ease-in-out, height 0.3s ease-in-out; */ /* Animate height change - can be jerky */
+    padding-bottom: 20px; /* Add padding below the form fields */
+  }
+  
+  /* Fade in/out effect - keep if desired */
+  /*
+  .form-step {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    display: none; /* Hide inactive steps completely */
+  /* } */
+  
+  /*
+  .form-step.active {
+    opacity: 1;
+    display: block; /* Show the active step */
+  /* } */
+  
+  
+  .form-step > div {
+    margin-bottom: 15px;
+  }
+  
+  .form-step label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  
+  .form-step input[type="number"],
+  .form-step input[type="text"],
+  .form-step input[type="email"],
+  .form-step textarea,
+  .form-step select {
+    width: 100%; /* Use full width of container */
+    padding: 10px; /* Increase padding */
+    border: 1px solid #ddd;
+    border-radius: 4px; /* Slightly more rounded */
+    box-sizing: border-box;
+    font-size: 1em; /* Ensure readable font size */
+  }
+  
+  .form-step textarea {
+      min-height: 80px; /* Give textareas a decent default size */
+  }
+  
+  .form-step input[type="checkbox"] {
+    margin-right: 10px; /* More space after checkbox */
+    width: auto; /* Don't force checkbox to full width */
+    vertical-align: middle; /* Align checkbox with label text */
+  }
+  /* Style label associated with checkbox */
+  .form-step label[for*="checkbox"] {
+      display: inline-block; /* Allow label next to checkbox */
+      font-weight: normal; /* Normal weight for checkbox labels */
+  }
+  
+  
+  .navigation-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px; /* Add space above buttons */
+    padding-top: 15px; /* Add padding above buttons */
+    border-top: 1px solid #eee; /* Optional separator line */
+  }
+  
+  /* Ensure only one button stretches if only one is visible */
+  .navigation-buttons button:only-child {
+    margin-left: auto; /* Push single button (like Submit) to the right */
+  }
+  .navigation-buttons button:first-child:not(:only-child) {
+      margin-right: auto; /* Push Prev button left */
+  }
+  .navigation-buttons button:last-child:not(:only-child) {
+      margin-left: auto; /* Push Next button right */
+  }
+  
+  
+  .navigation-buttons button {
+    padding: 12px 20px; /* Larger buttons */
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease; /* Add transition */
+  }
+  
+  .navigation-buttons button.btn-prev {
+    background-color: #6c757d; /* Different color for previous? */
+  }
+  .navigation-buttons button.btn-prev:hover {
+    background-color: #5a6268;
+  }
+  
+  .navigation-buttons button.btn-submit {
+      background-color: #28a745; /* Green for submit */
+  }
+  .navigation-buttons button.btn-submit:hover {
+      background-color: #218838;
+  }
+  
+  .navigation-buttons button:hover {
+    background-color: #0056b3;
+  }
+  
+  /* --- Styling for Active/Inactive Steps (Alternative to simple opacity) --- */
+  /* Hide inactive steps using display: none */
+  .form-step {
+    display: none;
+  }
+  .form-step.active {
+    display: block;
+    animation: fadeIn 0.5s ease-in-out; /* Apply fade-in animation */
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }

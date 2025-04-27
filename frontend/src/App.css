@@ -1,0 +1,54 @@
+/* src/App.css */
+.App {
+  text-align: center;
+  background-color: #000; /* Black background */
+  color: #fff; /* White text for contrast */
+  min-height: 100vh; /* Make the app take up the full viewport height */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start; /* Align content from the top */
+  padding: 20px; /* Add some padding around the content */
+  box-sizing: border-box; /* Include padding in element's total width and height */
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  /* We can remove or modify the default header styles */
+  /* background-color: #282c34; */
+  /* min-height: 100vh; */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+h1 {
+  color: #4CAF50; /* Example fitness color: Green */
+  margin-bottom: 20px;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
