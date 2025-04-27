@@ -1,21 +1,23 @@
 # PersonalPath
 
-A full-stack web application built with Django REST Framework and React, designed to help users manage their personal development path.
+A full-stack web application built with Django REST Framework and React, designed to help users track and manage their weight loss journey.
 
 ## Project Overview
 
 PersonalPath is a web application that combines a Django backend with a React frontend to create a platform where users can:
-- Register and authenticate
-- Create and manage their user profiles
-- Track their personal development goals
-- Manage their learning path
+- Register and authenticate securely
+- Create and manage their personal fitness profiles
+- Track their weight loss progress
+- Set and monitor weight loss goals
+- Log daily activities and measurements
+- View progress visualizations and statistics
 
 ### Tech Stack
 
 **Backend:**
 - Django 4.2+
 - Django REST Framework
-- SimpleJWT for authentication
+- SimpleJWT for secure authentication
 - SQLite database (default)
 - CORS headers for frontend communication
 
@@ -23,7 +25,7 @@ PersonalPath is a web application that combines a Django backend with a React fr
 - React
 - React Router for navigation
 - Context API for state management
-- Modern CSS for styling
+- Modern CSS for a clean, responsive design
 
 ## Project Structure
 
@@ -31,18 +33,28 @@ PersonalPath is a web application that combines a Django backend with a React fr
 personalpath_project/
 ├── frontend/                 # React frontend application
 │   ├── src/
-│   │   ├── components/      # React components
+│   │   ├── components/      # React components (Login, Profile, Progress tracking)
 │   │   ├── context/         # React context (auth)
 │   │   └── App.js          # Main React component
 ├── users/                   # Django users app
-│   ├── models.py           # User models
-│   ├── views.py            # API views
+│   ├── models.py           # User and Profile models
+│   ├── views.py            # API views for user data
 │   ├── urls.py             # API endpoints
 │   └── serializers.py      # Data serializers
 ├── personalpath_project/    # Django project settings
 ├── manage.py               # Django management script
 └── requirements.txt        # Python dependencies
 ```
+
+## Features
+
+- **User Authentication**: Secure registration and login system
+- **Profile Management**: Create and update personal fitness profiles
+- **Weight Tracking**: Log and monitor weight changes over time
+- **Goal Setting**: Set target weights and milestone goals
+- **Progress Visualization**: View weight loss progress through charts and graphs
+- **Activity Logging**: Track exercise and dietary activities
+- **Responsive Design**: Fully functional on both desktop and mobile devices
 
 ## Setup Instructions
 
@@ -117,20 +129,22 @@ personalpath_project/
 
 - `/api/users/register/` - User registration
 - `/api/users/login/` - User authentication (JWT token)
-- `/api/users/profile/` - User profile management
+- `/api/users/profile/` - User profile and fitness data management
+- `/api/users/weight-logs/` - Weight tracking entries
+- `/api/users/goals/` - Weight loss goals management
 
 ## Development
 
 ### Backend Development
 
-- Models are defined in `users/models.py`
+- Models are defined in `users/models.py` (User profiles, weight logs, goals)
 - API views are in `users/views.py`
 - URL routing is configured in `users/urls.py`
 - Project settings are in `personalpath_project/settings.py`
 
 ### Frontend Development
 
-- Components are in `frontend/src/components/`
+- Components are in `frontend/src/components/` (Profile, Weight Tracker, Goals)
 - Authentication context is in `frontend/src/context/`
 - Main application logic is in `frontend/src/App.js`
 
