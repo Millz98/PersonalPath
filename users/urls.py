@@ -1,11 +1,14 @@
 # users/urls.py
 
 from django.urls import path
-from .views import UserCreate, UserProfileCreateUpdate
-from rest_framework_simplejwt.views import TokenObtainPairView # Import
+# --- Import the CORRECT view name ---
+from .views import UserCreate, UserProfileDetailView
+# --- Import the JWT view ---
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 urlpatterns = [
     path('register/', UserCreate.as_view(), name='register'),
-    path('profile/', UserProfileCreateUpdate.as_view(), name='profile'),
+    # --- Use the CORRECT view name here too ---
+    path('profile/', UserProfileDetailView.as_view(), name='profile'),
     path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
 ]
