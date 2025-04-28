@@ -122,6 +122,7 @@ personalpath_project/
    # macOS/Linux
    python -m venv venv
    source venv/bin/activate
+   .\venv\Scripts\Activate.ps1 (if you are on windows)
    ```
 
 3. Install Python dependencies:
