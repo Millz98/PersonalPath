@@ -10,8 +10,6 @@ import {
   Input,
   VStack,
   Heading,
-  Alert,
-  AlertDescription,
   Link,
   Text
 } from '@chakra-ui/react';
