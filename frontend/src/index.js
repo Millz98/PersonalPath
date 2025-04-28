@@ -3,6 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { AuthProvider } from './context/AuthContext'; // <-- Import AuthProvider
+import { ChakraProvider } from '@chakra-ui/react';
 import './index.css'; // Your global styles
 import reportWebVitals from './reportWebVitals'; // Add this import
 // If using Chakra UI, ChakraProvider might also be here
@@ -10,11 +11,12 @@ import reportWebVitals from './reportWebVitals'; // Add this import
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    {/* Wrap the entire App component with AuthProvider */}
-    <AuthProvider>
-      {/* If using Chakra UI, ChakraProvider would likely go here or wrap AuthProvider */}
-      <App />
-    </AuthProvider>
+    <ChakraProvider>
+      <AuthProvider>
+        {/* If using Chakra UI, ChakraProvider would likely go here or wrap AuthProvider */}
+        <App />
+      </AuthProvider>
+    </ChakraProvider>
   </React.StrictMode>
 );
 
