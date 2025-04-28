@@ -7,16 +7,16 @@ import { useNavigate, Link as ReactRouterLink } from 'react-router-dom'; // Impo
 import {
   Box,
   Button,
-  FormControl,
-  FormLabel,
-  FormErrorMessage,
   Input,
   VStack, // Vertical Stack for layout
   Heading,
   Alert,
   AlertDescription,
   Link,  // Chakra UI Link
-  Text   // Chakra UI Text
+  Text,   // Chakra UI Text
+  FormLabel,
+  FormControl,
+  FormErrorMessage
 } from '@chakra-ui/react';
 import { WarningIcon } from '@chakra-ui/icons'; // Import WarningIcon for alerts
 
@@ -112,8 +112,7 @@ const Register = () => {
 
       {/* Use VStack for vertical spacing of form elements */}
       <VStack as="form" onSubmit={handleSubmit} spacing={4} align="stretch">
-        {/* Username Field */}
-        <FormControl isInvalid={!!fieldErrors.username} isRequired>
+        <Box>
           <FormLabel htmlFor="reg-username">Username</FormLabel>
           <Input
             id="reg-username"
@@ -121,13 +120,16 @@ const Register = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             isDisabled={isLoading}
+            isInvalid={!!fieldErrors.username}
           />
-          {/* Show field-specific error message */}
-          <FormErrorMessage>{fieldErrors.username?.join(', ')}</FormErrorMessage>
-        </FormControl>
+          {fieldErrors.username && (
+            <Text color="red.500" fontSize="sm" mt={1}>
+              {fieldErrors.username.join(', ')}
+            </Text>
+          )}
+        </Box>
 
-        {/* Password Field */}
-        <FormControl isInvalid={!!fieldErrors.password} isRequired>
+        <Box>
           <FormLabel htmlFor="reg-password">Password</FormLabel>
           <Input
             id="reg-password"
@@ -135,14 +137,16 @@ const Register = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             isDisabled={isLoading}
+            isInvalid={!!fieldErrors.password}
           />
-          <FormErrorMessage>{fieldErrors.password?.join(', ')}</FormErrorMessage>
-           {/* TODO: Add password strength indicator later */}
-        </FormControl>
+          {fieldErrors.password && (
+            <Text color="red.500" fontSize="sm" mt={1}>
+              {fieldErrors.password.join(', ')}
+            </Text>
+          )}
+        </Box>
 
-        {/* Email Field (Optional based on backend validation) */}
-        <FormControl isInvalid={!!fieldErrors.email}>
-          {/* Add isRequired here if your backend requires email */}
+        <Box>
           <FormLabel htmlFor="reg-email">Email</FormLabel>
           <Input
             id="reg-email"
@@ -150,12 +154,16 @@ const Register = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             isDisabled={isLoading}
+            isInvalid={!!fieldErrors.email}
             placeholder="Optional"
           />
-          <FormErrorMessage>{fieldErrors.email?.join(', ')}</FormErrorMessage>
-        </FormControl>
+          {fieldErrors.email && (
+            <Text color="red.500" fontSize="sm" mt={1}>
+              {fieldErrors.email.join(', ')}
+            </Text>
+          )}
+        </Box>
 
-        {/* Submit Button */}
         <Button
           type="submit"
           colorScheme="teal" // Or another scheme fitting your theme (e.g., "blue", "green")
