@@ -1,11 +1,14 @@
 // src/components/ProfileForm.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext'; // <-- Import useAuth
 import './ProfileForm.css';
 
 const ProfileForm = () => {
+  const { logout } = useAuth(); // <-- Get logout function from context
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
+    // Initialize with default structure and empty/default values
     age: '',
     height_cm: '',
     current_weight_kg: '',
@@ -17,7 +20,7 @@ const ProfileForm = () => {
     dietary_preferences: '',
     food_allergies: '',
     disliked_foods: '',
-    activity_level: 'sedentary',
+    activity_level: 'sedentary', // Ensure this matches a valid <option> value
     weight_loss_goal_kg: '',
     desired_loss_rate: '',
   });
@@ -28,9 +31,8 @@ const ProfileForm = () => {
   // State for data fetching
   const [isFetching, setIsFetching] = useState(true);
   const [fetchError, setFetchError] = useState('');
-  // --- Add state for submission loading ---
+  // State for submission loading
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // --- End state for submission loading ---
 
   // Fetch Profile Data on component mount
   useEffect(() => {
@@ -39,7 +41,6 @@ const ProfileForm = () => {
       setFetchError('');
       setSuccessMessage('');
       setSubmitError('');
-
       try {
         console.log("Fetching profile data...");
         const response = await axios.get('/api/users/profile/');
@@ -58,7 +59,6 @@ const ProfileForm = () => {
           }
         }
         setFormData(updatedFormData);
-
       } catch (error) {
         console.error('Failed to fetch profile data:', error.response ? error.response.data : error.message);
         setFetchError('Failed to load your profile information. Please try refreshing the page.');
@@ -66,7 +66,6 @@ const ProfileForm = () => {
         setIsFetching(false);
       }
     };
-
     fetchProfileData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -84,24 +83,19 @@ const ProfileForm = () => {
     }));
   };
 
-  // --- Updated Form Submission Handler ---
+  // Form Submission Handler (Using PATCH)
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitError('');
     setSuccessMessage('');
-    setIsSubmitting(true); // <<< Set submitting state TRUE
+    setIsSubmitting(true);
 
     try {
       console.log("Submitting profile data:", formData);
-      // --- Use PATCH request for updating profile ---
-      const response = await axios.patch('/api/users/profile/', formData);
-      // ---------------------------------------------
+      const response = await axios.patch('/api/users/profile/', formData); // Using PATCH
       console.log('Profile update response:', response.data);
       setSuccessMessage('Profile updated successfully!');
-      // Optional: Update local state if backend returns updated object
-      // setFormData(response.data);
-
-    } catch (error) { // --- Improved Error Handling ---
+    } catch (error) {
       console.error('Profile update error:', error.response ? error.response.data : error.message);
       if (error.response && error.response.data) {
         const errors = error.response.data;
@@ -118,20 +112,18 @@ const ProfileForm = () => {
       } else {
         setSubmitError('Update failed. Please check your connection and try again.');
       }
-      // --- End Improved Error Handling ---
     } finally {
-      setIsSubmitting(false); // <<< Set submitting state FALSE
+      setIsSubmitting(false);
     }
   };
-  // --- End Updated Form Submission Handler ---
 
-  // --- Rendering Logic for Form Steps ---
+  // Rendering Logic for Form Steps
   const renderForm = () => {
-    // Make sure all inputs inside the steps are disabled when fetching or submitting
     const isDisabled = isFetching || isSubmitting;
-
+    // IMPORTANT: Add cases for ALL steps (2-13) here, similar to case 1
+    // Make sure every input/select/textarea uses disabled={isDisabled}
+    // and value={formData.fieldName} / checked={formData.fieldName}
     switch (step) {
-      // --- Example: Step 1 ---
       case 1:
         return (
           <div className={`form-step ${step === 1 ? 'active' : ''}`}>
@@ -141,99 +133,89 @@ const ProfileForm = () => {
             </div>
           </div>
         );
-      // --- Example: Step 7 (Checkbox) ---
-       case 7:
-         return (
-           <div className={`form-step ${step === 7 ? 'active' : ''}`}>
-             <div>
-               {/* Checkbox labels often wrap the input */}
-               <label htmlFor="has_gym_membership">
-                 <input type="checkbox" id="has_gym_membership" name="has_gym_membership" checked={formData.has_gym_membership} onChange={handleChange} disabled={isDisabled} />
-                 Do you have a gym membership?
-               </label>
-             </div>
-           </div>
-         );
-       // --- Example: Step 12 (Select) ---
-       case 12:
-         return (
-           <div className={`form-step ${step === 12 ? 'active' : ''}`}>
-             <div>
-               <label htmlFor="activity_level">Activity Level:</label>
-               <select id="activity_level" name="activity_level" value={formData.activity_level} onChange={handleChange} disabled={isDisabled}>
-                 <option value="sedentary">Sedentary</option>
-                 <option value="lightly_active">Lightly Active</option>
-                 <option value="moderately_active">Moderately Active</option>
-                 <option value="very_active">Very Active</option>
-                 {/* Ensure options match backend model choices */}
-               </select>
-             </div>
-           </div>
-         );
+      // --- Add cases 2 through 13 here ---
+      // --- Remember to implement the JSX for each step's fields ---
+      // Example for Step 2 (Height):
+      // case 2:
+      //   return (
+      //     <div className={`form-step ${step === 2 ? 'active' : ''}`}>
+      //       <div>
+      //         <label htmlFor="height_cm">Height (cm):</label>
+      //         <input type="number" id="height_cm" name="height_cm" value={formData.height_cm} onChange={handleChange} required disabled={isDisabled} />
+      //       </div>
+      //     </div>
+      //   );
+      // ... etc for all steps ...
 
-      // --- Add Cases for steps 2-6, 8-11, 13 ---
-      // Ensure each input/textarea/select uses:
-      // - name="fieldName"
-      // - value={formData.fieldName} (or checked for checkbox)
-      // - onChange={handleChange}
-      // - disabled={isDisabled}
-
-      // --- Default case ---
       default:
-        // Handle invalid step or provide a default view if not using multi-step
-        return <div>Step {step} rendering not implemented yet.</div>;
+        return <div>Step {step} rendering not implemented yet. Please add case {step} to renderForm().</div>;
     }
   };
-  // --- End Rendering Logic ---
-
 
   // --- Main Component Return ---
-  // Show loading indicator while fetching initial data
   if (isFetching) {
     return <div>Loading your profile...</div>;
   }
-
-  // Show error message if initial fetch failed
   if (fetchError) {
     return <div className="profile-form-container"><p className="error-message">{fetchError}</p></div>;
   }
 
-  // Render the form
   return (
     <div className="profile-form-container">
       <h2>Your Profile</h2>
-      {/* Display submission status messages */}
       {submitError && <p className="error-message">{submitError}</p>}
       {successMessage && <p className="success-message">{successMessage}</p>}
 
       <div className="form-content-wrapper">
-        {/* Optional: Progress bar */}
-        {/* ... */}
-
         <form onSubmit={handleSubmit} className={`step-${step}`}>
           {renderForm()} {/* Render current step's inputs */}
 
           {/* Navigation/Submit Buttons */}
-          <div className="navigation-buttons">
+          <div className={`navigation-buttons ${step === 1 ? 'step-one-centering' : ''}`}>
             {step > 1 && (
-              <button type="button" onClick={prevStep} className="btn-prev" disabled={isSubmitting}> {/* Only disable during submit */}
+              <button type="button" onClick={prevStep} className="btn-prev" disabled={isSubmitting}>
                 Previous
               </button>
             )}
             {step < totalSteps && (
-              <button type="button" onClick={nextStep} className="btn-next" disabled={isSubmitting}> {/* Only disable during submit */}
+              <button type="button" onClick={nextStep} className="btn-next" disabled={isSubmitting}>
                 Next
               </button>
             )}
             {step === totalSteps && (
-              <button type="submit" className="btn-submit" disabled={isFetching || isSubmitting}> {/* Disable if fetching OR submitting */}
-                 {isSubmitting ? 'Updating...' : 'Update Profile'} {/* Change text when submitting */}
+              <button type="submit" className="btn-submit" disabled={isFetching || isSubmitting}>
+                 {isSubmitting ? 'Updating...' : 'Update Profile'}
               </button>
             )}
           </div>
-        </form>
-      </div>
-    </div>
+        </form> {/* End of Form */}
+
+        {/* === Add Logout Button Section Below Form === */}
+        <div style={{
+            marginTop: '30px',      // Space above the button section
+            paddingTop: '20px',     // Space within the section above button
+            borderTop: '1px solid #eee', // Optional separator line
+            textAlign: 'center'     // Center the button horizontally
+        }}>
+          <button
+            onClick={logout} // Call the logout function from context
+            style={{ // Basic styling - replace with CSS class or Chakra Button later
+              padding: '10px 25px', // Make it reasonably sized
+              fontSize: '1em',
+              backgroundColor: '#6c757d', // Secondary/neutral color
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer'
+            }}
+          >
+            Logout
+          </button>
+        </div>
+        {/* === End Logout Button Section === */}
+
+      </div> {/* End form-content-wrapper */}
+    </div> // End profile-form-container
   );
 };
 

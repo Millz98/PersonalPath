@@ -9,88 +9,68 @@ import ProfileForm from './components/ProfileForm';
 import Login from './components/Login';         // Ensure this component exists
 import ProtectedRoute from './components/ProtectedRoute'; // Import the wrapper
 
-// Import authentication context hook
+// Import authentication context hook - Only need isLoggedIn for routing
 import { useAuth } from './context/AuthContext'; // Adjust path if needed
 
 // Optional global styles
 import './App.css';
 
 function App() {
-  // Get authentication status and logout function from the context
-  const { isLoggedIn, logout } = useAuth();
+  // Get authentication status for conditional routing logic
+  // We no longer need the logout function directly in App.js
+  const { isLoggedIn } = useAuth();
 
-  // Handler for the logout button
-  const handleLogout = () => {
-    logout();
-    // Navigation after logout is usually handled by ProtectedRoute checks
-    // or could be explicitly done here using useNavigate() if needed.
-  };
+  // handleLogout function is REMOVED from App.js
 
   return (
     // Assuming Router wraps AuthProvider and App in index.js is common.
-    // If not, ensure <Router> is placed appropriately (e.g., here or in index.js).
-    // For this example, we include Router here.
+    // If not, ensure <Router> is placed appropriately.
     <Router>
       <div className="App">
-        {/* Header with Flexbox for layout */}
+        {/* Header - Logout button is removed */}
         <header
           className="App-header"
           style={{
-            display: 'flex',            // Use flexbox for layout
-            justifyContent: 'space-between', // Pushes title left, button right
-            alignItems: 'center',       // Vertically aligns title and button
-            padding: '1rem 1.5rem',       // Add some padding around header content
+            display: 'flex',
+            // Changed justify content to center since only title is here now
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: '1rem 1.5rem',
             borderBottom: '1px solid #eee',
             marginBottom: '20px'
           }}
         >
-          {/* Title - Remove default margin for better flex alignment */}
+          {/* Title */}
           <h1 style={{ margin: 0, fontSize: '1.5rem' }}>
             Welcome to PersonalPath
           </h1>
 
-          {/* Conditionally render Logout button if logged in */}
-          {isLoggedIn && (
-            <button
-              onClick={handleLogout}
-              style={{
-                // Style for button within flex container (no absolute positioning)
-                padding: '8px 12px',        // Adjust padding as needed
-                fontSize: '0.9rem',         // Adjust font size as needed
-                backgroundColor: '#f44336', // Example logout button color
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                marginLeft: '1rem'         // Space between title and button
-              }}
-            >
-              Logout
-            </button>
-          )}
+          {/* Logout button is REMOVED from the header */}
+
         </header>
 
         {/* Main content area where routed components will render */}
         <main>
           <Routes>
             {/* --- Public Routes --- */}
-            {/* Redirect logged-in users away from login/register */}
+            {/* If logged in, redirect away from login page to profile */}
             <Route
               path="/login"
               element={isLoggedIn ? <Navigate replace to="/profile" /> : <Login />}
             />
+            {/* If logged in, redirect away from register page to profile */}
             <Route
               path="/register"
               element={isLoggedIn ? <Navigate replace to="/profile" /> : <Register />}
             />
 
             {/* --- Protected Routes --- */}
-            {/* Use ProtectedRoute to guard access */}
+            {/* Profile route is protected */}
             <Route
               path="/profile"
               element={
-                <ProtectedRoute>
-                  <ProfileForm />
+                <ProtectedRoute> {/* Ensures user is logged in */}
+                  <ProfileForm /> {/* Renders the form (which now contains logout button) */}
                 </ProtectedRoute>
               }
             />

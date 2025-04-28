@@ -7,7 +7,6 @@
   border-radius: 5px;
   display: flex;
   flex-direction: column;
-  /* Remove or comment out the line below */
   /* min-height: 400px; */ /* Let height be determined by content */
 }
 
@@ -53,14 +52,6 @@ h2 {
   white-space: nowrap; /* Prevent text wrapping */
 }
 
-/* Optional: Add text inside the progress bar itself */
-/*
-.progress-bar::after {
-  content: attr(data-label);
-}
-*/
-
-/* Alternative: Text overlaying the container */
 .progress-bar-container span {
   position: absolute;
   width: 100%;
@@ -78,32 +69,13 @@ h2 {
   flex-grow: 1; /* Allow the form content to take up available space */
   display: flex;
   flex-direction: column;
-  /* Change justify-content if you removed min-height and still want buttons close to content */
-  /* justify-content: flex-start; */ /* Keeps buttons closer to content */
   justify-content: space-between; /* Keeps buttons at bottom (if container grows) */
 }
 
 
 .form-step {
-  /* Remove fixed height/min-height from here too if added */
-  /* transition: opacity 0.3s ease-in-out, height 0.3s ease-in-out; */ /* Animate height change - can be jerky */
   padding-bottom: 20px; /* Add padding below the form fields */
 }
-
-/* Fade in/out effect - keep if desired */
-/*
-.form-step {
-  opacity: 0;
-  transition: opacity 0.3s ease-in-out;
-  display: none; /* Hide inactive steps completely */
-/* } */
-
-/*
-.form-step.active {
-  opacity: 1;
-  display: block; /* Show the active step */
-/* } */
-
 
 .form-step > div {
   margin-bottom: 15px;
@@ -126,10 +98,8 @@ h2 {
   border-radius: 4px; /* Slightly more rounded */
   box-sizing: border-box;
   font-size: 1em; /* Ensure readable font size */
-  /* --- Add these lines --- */
   color: #1A202C; /* A dark color for text (Chakra dark gray) */
   background-color: white; /* Explicitly set background */
-  /* --- End added lines --- */
 }
 
 .form-step textarea {
@@ -141,7 +111,7 @@ h2 {
   width: auto; /* Don't force checkbox to full width */
   vertical-align: middle; /* Align checkbox with label text */
 }
-/* Style label associated with checkbox */
+
 .form-step label[for*="checkbox"] {
     display: inline-block; /* Allow label next to checkbox */
     font-weight: normal; /* Normal weight for checkbox labels */
@@ -150,24 +120,43 @@ h2 {
 
 .navigation-buttons {
   display: flex;
+  /* Default justification for steps > 1 */
   justify-content: space-between;
   margin-top: 20px; /* Add space above buttons */
   padding-top: 15px; /* Add padding above buttons */
   border-top: 1px solid #eee; /* Optional separator line */
 }
 
-/* Ensure only one button stretches if only one is visible */
-.navigation-buttons button:only-child {
-  margin-left: auto; /* Push single button (like Submit) to the right */
+/* --- START: Added/Modified rules for Step 1 Centering --- */
+
+/* Override justify-content specifically when the centering class is present (Step 1) */
+.navigation-buttons.step-one-centering {
+  justify-content: center;
 }
+
+/* Default rule pushes single button right */
+.navigation-buttons button:only-child {
+  margin-left: auto;
+}
+
+/* Override the default push specifically when centering (Step 1) */
+.navigation-buttons.step-one-centering button:only-child {
+  margin-left: 0; /* No auto margin needed when centered */
+}
+
+/* --- END: Added/Modified rules for Step 1 Centering --- */
+
+
+/* Keep rules for positioning on steps > 1 */
 .navigation-buttons button:first-child:not(:only-child) {
     margin-right: auto; /* Push Prev button left */
 }
 .navigation-buttons button:last-child:not(:only-child) {
-    margin-left: auto; /* Push Next button right */
+    margin-left: auto; /* Push Next/Submit button right */
 }
 
 
+/* General button styling */
 .navigation-buttons button {
   padding: 12px 20px; /* Larger buttons */
   border: none;
@@ -197,13 +186,12 @@ h2 {
   background-color: #0056b3;
 }
 
-/* --- Styling for Active/Inactive Steps (Alternative to simple opacity) --- */
-/* Hide inactive steps using display: none */
+/* Styling for Active/Inactive Steps */
 .form-step {
-  display: none;
+  display: none; /* Hide inactive steps */
 }
 .form-step.active {
-  display: block;
+  display: block; /* Show active step */
   animation: fadeIn 0.5s ease-in-out; /* Apply fade-in animation */
 }
 
