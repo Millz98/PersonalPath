@@ -1,5 +1,5 @@
 // src/components/Login.js
-import React, { useState, useContext } from 'react'; // Import useContext
+import React, { useState } from 'react'; // Remove useContext
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext'; // Adjust path if necessary
