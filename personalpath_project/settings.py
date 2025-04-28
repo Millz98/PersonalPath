@@ -101,6 +101,24 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        # Tells DRF to check for JWT Bearer tokens in the Authorization header
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+
+        # You might potentially add other auth methods here if needed later,
+        # like SessionAuthentication for the Django Admin interface, but
+        # JWTAuthentication is essential for your API token auth.
+        # 'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        # Sets default permissions for views if not specified on the view itself
+        # Your view currently overrides this with IsAuthenticated, which is fine.
+        'rest_framework.permissions.IsAuthenticated',
+    )
+    # You can add other DRF settings here later (pagination, etc.)
+}
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
