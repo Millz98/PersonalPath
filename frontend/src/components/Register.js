@@ -7,6 +7,9 @@ import { useNavigate, Link as ReactRouterLink } from 'react-router-dom'; // Impo
 import {
   Box,
   Button,
+  FormControl,
+  FormLabel,
+  FormErrorMessage,
   Input,
   VStack, // Vertical Stack for layout
   Heading,
@@ -15,11 +18,6 @@ import {
   Link,  // Chakra UI Link
   Text   // Chakra UI Text
 } from '@chakra-ui/react';
-import {
-  FormControl,
-  FormLabel,
-  FormErrorMessage
-} from '@chakra-ui/form-control';
 import { WarningIcon } from '@chakra-ui/icons'; // Import WarningIcon for alerts
 
 const Register = () => {
