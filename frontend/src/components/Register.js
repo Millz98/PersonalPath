@@ -15,7 +15,6 @@ import {
   Link,
   Text
 } from '@chakra-ui/react';
-import { WarningIcon } from '@chakra-ui/icons';
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -89,10 +88,9 @@ const Register = () => {
       </Heading>
 
       {error && (
-        <Alert status="error" mb={4} borderRadius="md">
-          <WarningIcon />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <Box bg="red.50" p={4} borderRadius="md" mb={4} borderWidth="1px" borderColor="red.200">
+          <Text color="red.500">{error}</Text>
+        </Box>
       )}
 
       <VStack as="form" onSubmit={handleSubmit} spacing={4} align="stretch">
