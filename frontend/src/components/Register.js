@@ -1,36 +1,73 @@
 // src/components/Register.js
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate, Link as ReactRouterLink } from 'react-router-dom'; // Import React Router Link
+
+// Import Chakra UI components
+import {
+  Box,
+  Button,
+  FormControl,
+  FormLabel,
+  FormErrorMessage,
+  Input,
+  VStack, // Vertical Stack for layout
+  Heading,
+  Alert,
+  AlertDescription,
+  Link,  // Chakra UI Link
+  Text   // Chakra UI Text
+} from '@chakra-ui/react';
+import { WarningIcon } from '@chakra-ui/icons'; // Import WarningIcon for alerts
 
 const Register = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState({}); // For specific field errors
-  const [isLoading, setIsLoading] = useState(false); // Loading state
-  const navigate = useNavigate(); // Initialize navigate
+  const [error, setError] = useState(''); // General non-field errors
+  const [fieldErrors, setFieldErrors] = useState({}); // Field-specific errors {username: ['msg'], ...}
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
-  // Helper to parse backend errors
-  const parseApiErrors = (apiError) => {
-    if (apiError.response && apiError.response.data) {
-      const data = apiError.response.data;
-      if (typeof data === 'object' && data !== null) {
-          // Handle DRF field errors (e.g., {username: ['msg'], password: ['msg']})
-          setFieldErrors(data);
-          // Create a general message from field errors
-          const generalMessage = Object.entries(data)
-             .map(([field, messages]) => `${field}: ${messages.join(' ')}`)
-             .join('; ');
-          return `Registration failed. Please check errors: ${generalMessage}`;
-      } else if (typeof data === 'string') {
-          // Handle simple string errors
-          return data;
-      }
-    }
-    return 'Registration failed. An unknown error occurred.'; // Fallback
-  };
+  // Helper to parse backend errors (can be moved to a utility file later)
+   const parseApiErrors = (apiError) => {
+     setFieldErrors({}); // Clear previous field errors first
+     if (apiError.response && apiError.response.data) {
+       const data = apiError.response.data;
+       if (typeof data === 'object' && data !== null) {
+         // Check for standard DRF field errors
+         const fieldSpecificErrors = {};
+         let generalErrorMessage = '';
+         Object.entries(data).forEach(([key, value]) => {
+             if (key === 'detail') {
+                 generalErrorMessage = Array.isArray(value) ? value.join(' ') : value;
+             } else if (key === 'non_field_errors') {
+                 generalErrorMessage = Array.isArray(value) ? value.join(' ') : value;
+             }
+              else {
+                 // Assume other keys are field names
+                 fieldSpecificErrors[key] = Array.isArray(value) ? value : [value];
+             }
+         });
+
+         if (Object.keys(fieldSpecificErrors).length > 0) {
+             setFieldErrors(fieldSpecificErrors);
+             // Combine field errors for a general message *if* no other general message exists
+             if (!generalErrorMessage) {
+                generalErrorMessage = "Please correct the errors below.";
+             }
+             return generalErrorMessage; // Return general message (or empty if only field errors)
+         } else if (generalErrorMessage) {
+             return generalErrorMessage; // Return detail or non_field_errors
+         }
+
+       } else if (typeof data === 'string') {
+         return data; // Handle simple string error response
+       }
+     }
+     return 'Registration failed. An unknown error occurred.'; // Fallback
+   };
+
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -39,75 +76,106 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('/api/users/register/', {
+      await axios.post('/api/users/register/', {
         username,
         password,
         email,
       });
-      console.log('Registration successful:', response.data);
-      // Redirect to login page after successful registration
-      // Optionally: show a success message first (e.g., using a toast)
-      navigate('/login');
+      console.log('Registration successful');
+      // Consider showing a success toast message here before navigating
+      // Example: toast({ title: 'Registration successful!', status: 'success', duration: 3000, isClosable: true });
+      navigate('/login'); // Navigate to login page
 
     } catch (err) {
       console.error('Registration error:', err.response ? err.response.data : err.message);
       const errorMessage = parseApiErrors(err);
-      setError(errorMessage);
+      setError(errorMessage); // Set the general error message
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div>
-      <h2>Register</h2>
-      {/* Display general error message if no field errors were parsed */}
-      {error && Object.keys(fieldErrors).length === 0 && <p style={{ color: 'red' }}>{error}</p>}
+    // Use Box as a container, center it, add padding
+    <Box maxW="md" mx="auto" mt={8} p={6} borderWidth="1px" borderRadius="lg" boxShadow="md">
+      <Heading as="h2" size="lg" textAlign="center" mb={6}>
+        Register for PersonalPath
+      </Heading>
 
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="username">Username:</label>
-          <input
+      {/* Display general errors using Chakra Alert */}
+      {error && (
+        <Alert status="error" mb={4} borderRadius="md">
+          <WarningIcon />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Use VStack for vertical spacing of form elements */}
+      <VStack as="form" onSubmit={handleSubmit} spacing={4} align="stretch">
+        {/* Username Field */}
+        <FormControl isInvalid={!!fieldErrors.username} isRequired>
+          <FormLabel htmlFor="reg-username">Username</FormLabel>
+          <Input
+            id="reg-username"
             type="text"
-            id="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            required
-            aria-invalid={!!fieldErrors.username}
+            isDisabled={isLoading}
           />
-          {fieldErrors.username && <p style={{ color: 'red', fontSize: '0.8em' }}>{fieldErrors.username.join(' ')}</p>}
-        </div>
-        <div>
-          <label htmlFor="password">Password:</label>
-          <input
+          {/* Show field-specific error message */}
+          <FormErrorMessage>{fieldErrors.username?.join(', ')}</FormErrorMessage>
+        </FormControl>
+
+        {/* Password Field */}
+        <FormControl isInvalid={!!fieldErrors.password} isRequired>
+          <FormLabel htmlFor="reg-password">Password</FormLabel>
+          <Input
+            id="reg-password"
             type="password"
-            id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
-            aria-invalid={!!fieldErrors.password}
+            isDisabled={isLoading}
           />
-          {fieldErrors.password && <p style={{ color: 'red', fontSize: '0.8em' }}>{fieldErrors.password.join(' ')}</p>}
-        </div>
-        <div>
-          <label htmlFor="email">Email:</label>
-          <input
+          <FormErrorMessage>{fieldErrors.password?.join(', ')}</FormErrorMessage>
+           {/* TODO: Add password strength indicator later */}
+        </FormControl>
+
+        {/* Email Field (Optional based on backend validation) */}
+        <FormControl isInvalid={!!fieldErrors.email}>
+          {/* Add isRequired here if your backend requires email */}
+          <FormLabel htmlFor="reg-email">Email</FormLabel>
+          <Input
+            id="reg-email"
             type="email"
-            id="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-             aria-invalid={!!fieldErrors.email}
+            isDisabled={isLoading}
+            placeholder="Optional"
           />
-           {fieldErrors.email && <p style={{ color: 'red', fontSize: '0.8em' }}>{fieldErrors.email.join(' ')}</p>}
-        </div>
-        {/* Display non-field errors if provided by DRF */}
-        {fieldErrors.non_field_errors && <p style={{ color: 'red' }}>{fieldErrors.non_field_errors.join(' ')}</p>}
+          <FormErrorMessage>{fieldErrors.email?.join(', ')}</FormErrorMessage>
+        </FormControl>
 
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Registering...' : 'Register'}
-        </button>
-      </form>
-    </div>
+        {/* Submit Button */}
+        <Button
+          type="submit"
+          colorScheme="teal" // Or another scheme fitting your theme (e.g., "blue", "green")
+          isLoading={isLoading} // Shows spinner automatically
+          loadingText="Registering..." // Text shown with spinner
+          width="full" // Make button full width
+          mt={4} // Margin top for spacing
+        >
+          Register
+        </Button>
+      </VStack>
+
+       {/* Link to Login Page */}
+       <Text mt={4} textAlign="center">
+           Already have an account?{' '}
+           <Link as={ReactRouterLink} to="/login" color="teal.500" fontWeight="bold">
+               Login here
+           </Link>
+       </Text>
+    </Box>
   );
 };
 
