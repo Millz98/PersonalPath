@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { AuthProvider } from './context/AuthContext'; // <-- Import AuthProvider
 import './index.css'; // Your global styles
+import reportWebVitals from './reportWebVitals'; // Add this import
 // If using Chakra UI, ChakraProvider might also be here
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
