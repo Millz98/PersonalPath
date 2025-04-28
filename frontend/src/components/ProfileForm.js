@@ -97,7 +97,7 @@ const ProfileForm = () => {
      // ... handleSubmit logic using axios.patch remains the same ...
      event.preventDefault(); setSubmitError(''); setSuccessMessage(''); setIsSubmitting(true);
      try {
-       const response = await axios.patch('/api/users/profile/', formData);
+       await axios.patch('/api/users/profile/', formData);
        setSuccessMessage('Profile updated successfully!');
      } catch (error) { /*... improved error handling ...*/
         console.error('Profile update error:', error.response ? error.response.data : error.message);
