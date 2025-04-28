@@ -6,7 +6,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 // Import page/layout components
 import Register from './components/Register';
 import ProfileForm from './components/ProfileForm';
-import Login from './components/Login'; // Ensure this component exists
+import Login from './components/Login';         // Ensure this component exists
 import ProtectedRoute from './components/ProtectedRoute'; // Import the wrapper
 
 // Import authentication context hook
@@ -22,41 +22,59 @@ function App() {
   // Handler for the logout button
   const handleLogout = () => {
     logout();
+    // Navigation after logout is usually handled by ProtectedRoute checks
+    // or could be explicitly done here using useNavigate() if needed.
   };
 
   return (
-    // Assuming Router is here. If it's in index.js, remove <Router> and </Router> from this file.
+    // Assuming Router wraps AuthProvider and App in index.js is common.
+    // If not, ensure <Router> is placed appropriately (e.g., here or in index.js).
+    // For this example, we include Router here.
     <Router>
       <div className="App">
-        {/* Use header for title and conditional logout button */}
-        <header className="App-header" style={{ marginBottom: '20px', paddingBottom: '10px', borderBottom: '1px solid #eee', position: 'relative', minHeight: '50px' /* Ensure header has height */ }}>
-          <h1>Welcome to PersonalPath</h1>
+        {/* Header with Flexbox for layout */}
+        <header
+          className="App-header"
+          style={{
+            display: 'flex',            // Use flexbox for layout
+            justifyContent: 'space-between', // Pushes title left, button right
+            alignItems: 'center',       // Vertically aligns title and button
+            padding: '1rem 1.5rem',       // Add some padding around header content
+            borderBottom: '1px solid #eee',
+            marginBottom: '20px'
+          }}
+        >
+          {/* Title - Remove default margin for better flex alignment */}
+          <h1 style={{ margin: 0, fontSize: '1.5rem' }}>
+            Welcome to PersonalPath
+          </h1>
 
-          {/* Display Logout button only if user is logged in */}
+          {/* Conditionally render Logout button if logged in */}
           {isLoggedIn && (
             <button
               onClick={handleLogout}
-              style={{ /* Basic styling, replace with proper CSS later */
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                padding: '8px 15px',
-                backgroundColor: '#f44336',
+              style={{
+                // Style for button within flex container (no absolute positioning)
+                padding: '8px 12px',        // Adjust padding as needed
+                fontSize: '0.9rem',         // Adjust font size as needed
+                backgroundColor: '#f44336', // Example logout button color
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
-                cursor: 'pointer'
-               }}
+                cursor: 'pointer',
+                marginLeft: '1rem'         // Space between title and button
+              }}
             >
               Logout
             </button>
           )}
-        </header> {/* <<< Closing </header> tag */}
+        </header>
 
-        {/* Use main for the routed page content */}
+        {/* Main content area where routed components will render */}
         <main>
           <Routes>
             {/* --- Public Routes --- */}
+            {/* Redirect logged-in users away from login/register */}
             <Route
               path="/login"
               element={isLoggedIn ? <Navigate replace to="/profile" /> : <Login />}
@@ -67,6 +85,7 @@ function App() {
             />
 
             {/* --- Protected Routes --- */}
+            {/* Use ProtectedRoute to guard access */}
             <Route
               path="/profile"
               element={
@@ -75,15 +94,17 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            {/* <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} /> */}
+            {/* Add other protected routes later */}
+            {/* e.g., <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} /> */}
 
             {/* --- Default Route --- */}
+            {/* Redirects based on login status */}
             <Route
               path="/"
               element={
                 isLoggedIn
-                  ? <Navigate replace to="/profile" />
-                  : <Navigate replace to="/login" />
+                  ? <Navigate replace to="/profile" /> // Logged in -> Profile
+                  : <Navigate replace to="/login" />   // Logged out -> Login
               }
             />
 
@@ -96,9 +117,9 @@ function App() {
             } />
           </Routes>
         </main>
-      </div> {/* <<< Closing </div> tag for className="App" */}
-    </Router> // Closing </Router> tag
-  ); // End of return statement
-} // End of App function
+      </div>
+    </Router>
+  );
+}
 
 export default App;
