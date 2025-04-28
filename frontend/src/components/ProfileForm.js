@@ -1,14 +1,11 @@
 // src/components/ProfileForm.js
-import React, { useState, useEffect } from 'react'; // Import useEffect
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-// We assume ProtectedRoute handles ensuring user is logged in
-// and AuthContext interceptor handles adding the token.
 import './ProfileForm.css';
 
 const ProfileForm = () => {
-  const [step, setStep] = useState(1); // Assuming multi-step structure remains
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    // Initialize with default structure and empty/default values
     age: '',
     height_cm: '',
     current_weight_kg: '',
@@ -20,77 +17,65 @@ const ProfileForm = () => {
     dietary_preferences: '',
     food_allergies: '',
     disliked_foods: '',
-    activity_level: 'sedentary', // Ensure this matches a valid <option> value
+    activity_level: 'sedentary',
     weight_loss_goal_kg: '',
     desired_loss_rate: '',
   });
-  // Renamed original 'error' to be specific to submission errors
   const [submitError, setSubmitError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const totalSteps = 13; // Keep if using multi-step
+  const totalSteps = 13;
 
-  // --- State for data fetching ---
-  const [isFetching, setIsFetching] = useState(true); // Start loading initially
+  // State for data fetching
+  const [isFetching, setIsFetching] = useState(true);
   const [fetchError, setFetchError] = useState('');
-  // --- End state for data fetching ---
+  // --- Add state for submission loading ---
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // --- End state for submission loading ---
 
-  // --- useEffect to Fetch Profile Data ---
+  // Fetch Profile Data on component mount
   useEffect(() => {
-    // Define the async function to fetch data
     const fetchProfileData = async () => {
-      setIsFetching(true); // Start loading
-      setFetchError('');    // Clear previous fetch errors
-      setSuccessMessage('');// Clear previous success messages
-      setSubmitError(''); // Clear previous submit errors
+      setIsFetching(true);
+      setFetchError('');
+      setSuccessMessage('');
+      setSubmitError('');
 
       try {
         console.log("Fetching profile data...");
-        // Make GET request to the protected profile endpoint.
-        // The Axios interceptor from AuthContext should add the Auth header.
         const response = await axios.get('/api/users/profile/');
         const profileData = response.data;
         console.log("Profile data received:", profileData);
 
-        // Update local form state with fetched data, handling nulls
-        // Create a copy of the current state structure
         let updatedFormData = { ...formData };
-        // Iterate over the keys defined in the initial formData state
         for (const key in updatedFormData) {
-          // Check if the fetched data has this key
           if (profileData.hasOwnProperty(key)) {
             const backendValue = profileData[key];
-            // Handle null values from backend: map to empty string or boolean default
             if (backendValue === null) {
               updatedFormData[key] = typeof updatedFormData[key] === 'boolean' ? false : '';
             } else {
-              // Otherwise, use the value from the backend
               updatedFormData[key] = backendValue;
             }
           }
-          // If key exists in formData but not profileData, it keeps its default initial value
         }
-
-        setFormData(updatedFormData); // Update the state
+        setFormData(updatedFormData);
 
       } catch (error) {
         console.error('Failed to fetch profile data:', error.response ? error.response.data : error.message);
-        setFetchError('Failed to load your profile information. Please try refreshing the page or contact support if the problem persists.');
-        // You might want specific checks here, e.g., if error is 401, trigger logout via context?
+        setFetchError('Failed to load your profile information. Please try refreshing the page.');
       } finally {
-        setIsFetching(false); // Stop loading regardless of success/error
+        setIsFetching(false);
       }
     };
 
-    fetchProfileData(); // Call the fetch function
-
+    fetchProfileData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array means this effect runs only once when component mounts
-  // --- End useEffect ---
+  }, []);
 
-  // --- Form Navigation and Change Handling (Keep as is for now) ---
+  // Form Navigation
   const nextStep = () => setStep(prevStep => prevStep < totalSteps ? prevStep + 1 : prevStep);
   const prevStep = () => setStep(prevStep => prevStep > 1 ? prevStep - 1 : prevStep);
 
+  // Form Input Change Handler
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
     setFormData(prevFormData => ({
@@ -98,72 +83,122 @@ const ProfileForm = () => {
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
-  // --- End Form Navigation ---
 
-  // --- Form Submission ---
-  // TODO: Update this function to use axios.patch or axios.put
+  // --- Updated Form Submission Handler ---
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitError('');
     setSuccessMessage('');
-    // Add submitting state maybe: const [isSubmitting, setIsSubmitting] = useState(false);
-    // setIsSubmitting(true);
+    setIsSubmitting(true); // <<< Set submitting state TRUE
 
     try {
-      // IMPORTANT: Change this to PATCH or PUT for updates!
       console.log("Submitting profile data:", formData);
-      // const response = await axios.patch('/api/users/profile/', formData); // Use PATCH for partial updates
-      const response = await axios.post('/api/users/profile/', formData); // Placeholder - MUST CHANGE
+      // --- Use PATCH request for updating profile ---
+      const response = await axios.patch('/api/users/profile/', formData);
+      // ---------------------------------------------
       console.log('Profile update response:', response.data);
       setSuccessMessage('Profile updated successfully!');
+      // Optional: Update local state if backend returns updated object
+      // setFormData(response.data);
 
-    } catch (error) {
+    } catch (error) { // --- Improved Error Handling ---
       console.error('Profile update error:', error.response ? error.response.data : error.message);
-      // TODO: Improve error parsing for submission errors
-      setSubmitError('Failed to update profile. Please check your inputs and try again.');
-
+      if (error.response && error.response.data) {
+        const errors = error.response.data;
+        if (typeof errors === 'object' && errors !== null) {
+          const fieldErrorMessages = Object.entries(errors)
+            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(' ') : messages}`)
+            .join('; ');
+          setSubmitError(`Update failed: ${fieldErrorMessages}`);
+        } else if (typeof errors === 'string') {
+           setSubmitError(`Update failed: ${errors}`);
+        } else {
+           setSubmitError('Update failed. An unexpected error format was received.');
+        }
+      } else {
+        setSubmitError('Update failed. Please check your connection and try again.');
+      }
+      // --- End Improved Error Handling ---
     } finally {
-      // setIsSubmitting(false);
+      setIsSubmitting(false); // <<< Set submitting state FALSE
     }
   };
-  // --- End Form Submission ---
+  // --- End Updated Form Submission Handler ---
 
-
-  // --- Rendering Logic ---
+  // --- Rendering Logic for Form Steps ---
   const renderForm = () => {
-    // If keeping multi-step, ensure each input uses the correct formData field
-    // Example for step 1 (Age) - Add disabled={isFetching} to inputs
+    // Make sure all inputs inside the steps are disabled when fetching or submitting
+    const isDisabled = isFetching || isSubmitting;
+
     switch (step) {
-         case 1:
-           return (
-             <div className={`form-step ${step === 1 ? 'active' : ''}`}>
-               <div>
-                 <label htmlFor="age">Age:</label>
-                 <input type="number" id="age" name="age" value={formData.age} onChange={handleChange} required disabled={isFetching} />
-               </div>
+      // --- Example: Step 1 ---
+      case 1:
+        return (
+          <div className={`form-step ${step === 1 ? 'active' : ''}`}>
+            <div>
+              <label htmlFor="age">Age:</label>
+              <input type="number" id="age" name="age" value={formData.age} onChange={handleChange} required disabled={isDisabled} />
+            </div>
+          </div>
+        );
+      // --- Example: Step 7 (Checkbox) ---
+       case 7:
+         return (
+           <div className={`form-step ${step === 7 ? 'active' : ''}`}>
+             <div>
+               {/* Checkbox labels often wrap the input */}
+               <label htmlFor="has_gym_membership">
+                 <input type="checkbox" id="has_gym_membership" name="has_gym_membership" checked={formData.has_gym_membership} onChange={handleChange} disabled={isDisabled} />
+                 Do you have a gym membership?
+               </label>
              </div>
-           );
-        // ... other cases for steps 2-13, ensuring 'value={formData.fieldName}' and 'disabled={isFetching}'
-        // Default case or handling for single-step form needed if not multi-step
-        default:
-             // Placeholder: Render all fields if not using steps or step is invalid
-             // You'll need to structure this properly if removing steps
-            return <div>Implement form rendering here (or use multi-step cases)</div>;
-       }
+           </div>
+         );
+       // --- Example: Step 12 (Select) ---
+       case 12:
+         return (
+           <div className={`form-step ${step === 12 ? 'active' : ''}`}>
+             <div>
+               <label htmlFor="activity_level">Activity Level:</label>
+               <select id="activity_level" name="activity_level" value={formData.activity_level} onChange={handleChange} disabled={isDisabled}>
+                 <option value="sedentary">Sedentary</option>
+                 <option value="lightly_active">Lightly Active</option>
+                 <option value="moderately_active">Moderately Active</option>
+                 <option value="very_active">Very Active</option>
+                 {/* Ensure options match backend model choices */}
+               </select>
+             </div>
+           </div>
+         );
+
+      // --- Add Cases for steps 2-6, 8-11, 13 ---
+      // Ensure each input/textarea/select uses:
+      // - name="fieldName"
+      // - value={formData.fieldName} (or checked for checkbox)
+      // - onChange={handleChange}
+      // - disabled={isDisabled}
+
+      // --- Default case ---
+      default:
+        // Handle invalid step or provide a default view if not using multi-step
+        return <div>Step {step} rendering not implemented yet.</div>;
+    }
   };
+  // --- End Rendering Logic ---
+
 
   // --- Main Component Return ---
-  // Display loading indicator while fetching
+  // Show loading indicator while fetching initial data
   if (isFetching) {
     return <div>Loading your profile...</div>;
   }
 
-  // Display error if fetching failed
+  // Show error message if initial fetch failed
   if (fetchError) {
     return <div className="profile-form-container"><p className="error-message">{fetchError}</p></div>;
   }
 
-  // Render the form if fetching succeeded
+  // Render the form
   return (
     <div className="profile-form-container">
       <h2>Your Profile</h2>
@@ -172,28 +207,27 @@ const ProfileForm = () => {
       {successMessage && <p className="success-message">{successMessage}</p>}
 
       <div className="form-content-wrapper">
-        {/* Optional: Add progress bar for multi-step */}
-        {/* <div className="progress-bar-container">...</div> */}
+        {/* Optional: Progress bar */}
+        {/* ... */}
 
         <form onSubmit={handleSubmit} className={`step-${step}`}>
-          {renderForm()} {/* Renders the current step */}
+          {renderForm()} {/* Render current step's inputs */}
 
           {/* Navigation/Submit Buttons */}
           <div className="navigation-buttons">
             {step > 1 && (
-              <button type="button" onClick={prevStep} className="btn-prev" disabled={isFetching /* Add || isSubmitting */}>
+              <button type="button" onClick={prevStep} className="btn-prev" disabled={isSubmitting}> {/* Only disable during submit */}
                 Previous
               </button>
             )}
             {step < totalSteps && (
-              <button type="button" onClick={nextStep} className="btn-next" disabled={isFetching /* Add || isSubmitting */}>
+              <button type="button" onClick={nextStep} className="btn-next" disabled={isSubmitting}> {/* Only disable during submit */}
                 Next
               </button>
             )}
             {step === totalSteps && (
-              <button type="submit" className="btn-submit" disabled={isFetching /* Add || isSubmitting */}>
-                 {/* {isSubmitting ? 'Updating...' : 'Update Profile'} */}
-                 Update Profile
+              <button type="submit" className="btn-submit" disabled={isFetching || isSubmitting}> {/* Disable if fetching OR submitting */}
+                 {isSubmitting ? 'Updating...' : 'Update Profile'} {/* Change text when submitting */}
               </button>
             )}
           </div>
