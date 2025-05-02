@@ -68,10 +68,16 @@ PersonalPath is an intelligent fitness platform that combines comprehensive user
 personalpath_project/
 ├── frontend/                 # React frontend application
 │   ├── src/
-│   │   ├── components/      # React components (Profile, Workouts, Nutrition)
+│   │   ├── components/      # React components
 │   │   ├── context/         # Application state management
-│   │   ├── algorithms/      # Workout and nutrition planning logic
-│   │   └── App.js          # Main React component
+│   │   ├── App.js          # Main React component
+│   │   ├── App.css         # Main component styles
+│   │   ├── index.js        # Application entry point
+│   │   └── index.css       # Global styles
+│   ├── public/             # Static files
+│   ├── build/              # Production build files
+│   ├── package.json        # Node.js dependencies
+│   └── yarn.lock           # Yarn lock file
 ├── users/                   # Django users app
 │   ├── models.py           # User, Profile, and Preference models
 │   ├── views.py            # API views for user data
@@ -79,7 +85,8 @@ personalpath_project/
 │   └── serializers.py      # Data serializers
 ├── personalpath_project/    # Django project settings
 ├── manage.py               # Django management script
-└── requirements.txt        # Python dependencies
+├── requirements.txt        # Python dependencies
+└── db.sqlite3             # SQLite database file
 ```
 
 ## Features
