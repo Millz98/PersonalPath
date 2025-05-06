@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { getData as getCountryData } from 'country-list'; // For the country dropdown
 // --- Import RegionDropdown component ---
-import { RegionDropdown } from 'react-country-region-selector';
+import { State } from 'country-state-city';
 
 // --- Import Chakra UI Components ---
 import {
@@ -164,7 +164,17 @@ const ProfileForm = () => {
                 onChange={handleChange} // Use generic handler (clears province)
                 isDisabled={isDisabled}
                 placeholder="Select country"
-                sx={{ /* Styles for options */ }}
+                bg="black"
+                color="white"
+                sx={{
+                  option: {
+                    bg: "white",
+                    color: "black",
+                    _hover: {
+                      bg: "gray.100"
+                    }
+                  }
+                }}
               >
                 {countryOptions.map(option => (
                   <option key={option.value} value={option.value}>
@@ -181,18 +191,30 @@ const ProfileForm = () => {
           <VStack spacing={4} align="stretch">
             <FormControl isRequired>
               <FormLabel htmlFor="province-select">Province / State:</FormLabel>
-              {/* Use RegionDropdown component */}
-              <RegionDropdown
+              <Select
                 id="province-select"
-                country={formData.country} // Pass country CODE e.g., 'CA'
-                value={formData.province} // Pass province NAME e.g., 'Saskatchewan'
-                onChange={(val) => handleRegionChange(val)} // Use specific handler for region name
-                disabled={isDisabled || !formData.country}
-                // Apply CSS classes - make sure .form-step and .select exist in ProfileForm.css
-                // Or use Chakra style props if possible/needed via wrapper Box
-                classes="form-step select"
-                defaultOptionLabel="Select Region"
-              />
+                value={formData.province}
+                onChange={(e) => handleRegionChange(e.target.value)}
+                isDisabled={isDisabled || !formData.country}
+                placeholder="Select Region"
+                bg="black"
+                color="white"
+                sx={{
+                  option: {
+                    bg: "white",
+                    color: "black",
+                    _hover: {
+                      bg: "gray.100"
+                    }
+                  }
+                }}
+              >
+                {State.getStatesOfCountry(formData.country).map((state) => (
+                  <option key={state.isoCode} value={state.name}>
+                    {state.name}
+                  </option>
+                ))}
+              </Select>
             </FormControl>
           </VStack>
         );
