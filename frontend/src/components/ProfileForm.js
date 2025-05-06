@@ -194,7 +194,28 @@ const ProfileForm = () => {
         );
       // --- End Step 3 ---
 
-      // --- TODO: Add Cases 4 through 13 using Chakra components ---
+      // --- Step 4: Country (Using Chakra UI) ---
+      case 4:
+        return (
+          <VStack spacing={4} align="stretch">
+            <FormControl isRequired> {/* Country is required */}
+              <FormLabel htmlFor="country">Country:</FormLabel>
+              <Input
+                id="country"
+                name="country"
+                type="text" // Text input
+                value={formData.country}
+                onChange={handleChange}
+                isDisabled={isDisabled}
+                placeholder="Enter your country"
+              />
+              {/* <FormErrorMessage>Country is required.</FormErrorMessage> */}
+            </FormControl>
+          </VStack>
+        );
+      // --- End Step 4 ---
+
+      // --- TODO: Add Cases 5 through 13 ---
 
       default:
         return <Box>Step {step} rendering not implemented yet (Chakra UI).</Box>;
