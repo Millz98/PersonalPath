@@ -36,7 +36,7 @@ const ProfileForm = () => {
     height_cm: '',
     current_weight_kg: '',
     country: 'CA', // <-- Set default country to Canada code
-    province: '',
+    province: '', // Consider setting default to 'SK' later?
     physical_issues: '',
     has_gym_membership: false,
     home_equipment: '',
@@ -61,8 +61,8 @@ const ProfileForm = () => {
     countries.sort((a, b) => a.name.localeCompare(b.name));
     // Map to the format needed for select options { value: code, label: name }
     return countries.map(country => ({
-      value: country.code,
-      label: country.name
+      value: country.code, // e.g., 'CA'
+      label: country.name  // e.g., 'Canada'
     }));
   }, []); // Empty dependency array means this runs only once
 
@@ -73,23 +73,30 @@ const ProfileForm = () => {
       try {
         const response = await axios.get('/api/users/profile/');
         const profileData = response.data;
-        let updatedFormData = { ...formData }; // Start with default structure (incl 'CA')
+        let updatedFormData = { ...formData }; // Start with default structure (incl country:'CA')
 
-        // Overwrite defaults only if backend provides a value
         for (const key in updatedFormData) {
-          if (profileData.hasOwnProperty(key) && profileData[key] !== null) {
-              updatedFormData[key] = profileData[key];
-          } else if (profileData.hasOwnProperty(key) && profileData[key] === null) {
-              // If backend explicitly sends null, map to empty string/false,
-              // EXCEPT for country where we want to keep 'CA' if null/not set
-              if (key !== 'country') {
-                 updatedFormData[key] = typeof updatedFormData[key] === 'boolean' ? false : '';
-              }
-              // If key is 'country' and backend sent null, updatedFormData.country remains 'CA' from initial state
+          if (profileData.hasOwnProperty(key)) {
+            const backendValue = profileData[key];
+            // Use backend value only if it's not null
+            if (backendValue !== null) {
+                 updatedFormData[key] = backendValue;
+            }
+            // If backend value is null, keep the initial state value (like 'CA' for country)
+            // For boolean, map null to false
+            else if (typeof updatedFormData[key] === 'boolean') {
+                updatedFormData[key] = false;
+            }
+            // For others (string/number), map null to empty string (unless it's country)
+            else if (key !== 'country'){
+                updatedFormData[key] = '';
+            }
           }
         }
-        // Ensure country has *some* value (default 'CA' or fetched value)
-        if (!updatedFormData.country) updatedFormData.country = 'CA';
+        // Ensure country isn't accidentally cleared if backend sends null
+         if (!updatedFormData.country && countryOptions.length > 0) {
+             updatedFormData.country = 'CA'; // Re-apply default if needed
+         }
 
         setFormData(updatedFormData);
       } catch (error) {
@@ -101,7 +108,7 @@ const ProfileForm = () => {
     };
     fetchProfileData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [countryOptions]); // Add countryOptions dependency - technically it won't change, but good practice
 
   // --- Handlers ---
   const nextStep = () => setStep(prevStep => prevStep < totalSteps ? prevStep + 1 : prevStep);
@@ -116,31 +123,31 @@ const ProfileForm = () => {
   };
 
   // --- Form Submission Handler ---
-  const handleSubmit = async (event) => {
-    event.preventDefault(); setSubmitError(''); setSuccessMessage(''); setIsSubmitting(true);
-    try {
-      console.log("Submitting profile data:", formData);
-      const response = await axios.patch('/api/users/profile/', formData); // Using PATCH
-      console.log('Profile update response:', response.data); // Using response here
-      setSuccessMessage('Profile updated successfully!');
-    } catch (error) { // Full error handling
-      console.error('Profile update error:', error.response ? error.response.data : error.message);
-      if (error.response && error.response.data) {
-          const errors = error.response.data;
-          if (typeof errors === 'object' && errors !== null) {
-              const fieldErrorMessages = Object.entries(errors)
-                  .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(' ') : messages}`)
-                  .join('; ');
-              setSubmitError(`Update failed: ${fieldErrorMessages}`);
-          } else if (typeof errors === 'string') {
-              setSubmitError(`Update failed: ${errors}`);
-          } else {
-              setSubmitError('Update failed. An unexpected error format was received.');
-          }
-      } else {
-          setSubmitError('Update failed. Please check your connection and try again.');
-      }
-    } finally { setIsSubmitting(false); }
+   const handleSubmit = async (event) => {
+     event.preventDefault(); setSubmitError(''); setSuccessMessage(''); setIsSubmitting(true);
+     try {
+       console.log("Submitting profile data:", formData);
+       const response = await axios.patch('/api/users/profile/', formData); // Using PATCH
+       console.log('Profile update response:', response.data); // Using response here
+       setSuccessMessage('Profile updated successfully!');
+     } catch (error) { // Full error handling
+        console.error('Profile update error:', error.response ? error.response.data : error.message);
+        if (error.response && error.response.data) {
+            const errors = error.response.data;
+            if (typeof errors === 'object' && errors !== null) {
+                const fieldErrorMessages = Object.entries(errors)
+                    .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(' ') : messages}`)
+                    .join('; ');
+                setSubmitError(`Update failed: ${fieldErrorMessages}`);
+            } else if (typeof errors === 'string') {
+                setSubmitError(`Update failed: ${errors}`);
+            } else {
+                setSubmitError('Update failed. An unexpected error format was received.');
+            }
+        } else {
+            setSubmitError('Update failed. Please check your connection and try again.');
+        }
+     } finally { setIsSubmitting(false); }
   };
 
 
@@ -154,7 +161,8 @@ const ProfileForm = () => {
         return ( <VStack spacing={4} align="stretch"><FormControl isRequired><FormLabel htmlFor="height_cm">Height (cm):</FormLabel><Input id="height_cm" name="height_cm" type="number" value={formData.height_cm} onChange={handleChange} isDisabled={isDisabled} placeholder="Enter height in centimeters" /></FormControl></VStack> );
       case 3: // Weight
         return ( <VStack spacing={4} align="stretch"><FormControl isRequired><FormLabel htmlFor="current_weight_kg">Current Weight (kg):</FormLabel><Input id="current_weight_kg" name="current_weight_kg" type="number" value={formData.current_weight_kg} onChange={handleChange} isDisabled={isDisabled} placeholder="Enter current weight" step="0.1" /></FormControl></VStack> );
-      case 4: // Country (Dropdown)
+      // --- Step 4: Country (Using Chakra UI Select) ---
+      case 4:
         return (
           <VStack spacing={4} align="stretch">
             <FormControl isRequired>
@@ -162,10 +170,26 @@ const ProfileForm = () => {
               <Select
                 id="country"
                 name="country"
-                value={formData.country} // Bound to state ('CA', 'US', etc.)
+                value={formData.country}
                 onChange={handleChange}
                 isDisabled={isDisabled}
                 placeholder="Select country"
+                // --- Add the sx prop here ---
+                sx={{
+                  // Target option elements within this specific Select
+                  'option': {
+                    // Styles for light mode (or default)
+                    backgroundColor: 'white',
+                    color: '#1A202C', // Chakra dark gray
+                  },
+                  // Target options specifically when dark mode is active
+                  // (Uses data attribute added by Chakra)
+                  '[data-chakra-ui-color-mode=dark] & option': {
+                     backgroundColor: '#2D3748', // Example Chakra dark gray
+                     color: '#EDF2F7',     // Example Chakra light gray
+                  }
+                }}
+                // --- End sx prop ---
               >
                 {/* Map over the prepared country list */}
                 {countryOptions.map(option => (
@@ -177,6 +201,7 @@ const ProfileForm = () => {
             </FormControl>
           </VStack>
         );
+      // --- End Step 4 ---
 
       // --- TODO: Add Cases 5 through 13 ---
 
@@ -191,7 +216,8 @@ const ProfileForm = () => {
   if (isFetching) { return <Box p={5} textAlign="center">Loading your profile...</Box>; }
 
   return (
-    <Box maxW="600px" mx="auto" mt={8} p={6} borderWidth="1px" borderRadius="lg" boxShadow="base">
+    <Box className="profile-form-container" // Added class back for CSS targeting if needed
+      maxW="600px" mx="auto" mt={8} p={6} borderWidth="1px" borderRadius="lg" boxShadow="base">
       <Heading as="h2" size="lg" textAlign="center" mb={6}>Your Profile</Heading>
 
       {fetchError && ( <Alert status="error" mb={4} borderRadius="md"><AlertIcon /><AlertDescription>{fetchError}</AlertDescription></Alert> )}
@@ -218,6 +244,6 @@ const ProfileForm = () => {
 
     </Box>
   );
-}; // <<< Closing brace for ProfileForm component
+};
 
-export default ProfileForm; // Export statement
+export default ProfileForm;

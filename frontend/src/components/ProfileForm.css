@@ -168,6 +168,20 @@ h2 {
   transition: background-color 0.2s ease; /* Add transition */
 }
 
+/* Add this to your CSS file */
+
+/* Target options specifically within the profile form's select dropdown */
+.profile-form-container select#country option {
+  color: #1A202C; /* Force dark text (adjust if using dark mode) */
+  background-color: white; /* Force white background (adjust if using dark mode) */
+}
+
+/* If you are using Chakra's dark mode, you might need this too */
+[data-chakra-ui-color-mode="dark"] .profile-form-container select#country option {
+   color: #EDF2F7; /* Example light text */
+   background-color: #2D3748; /* Example dark background */
+}
+
 .navigation-buttons button.btn-prev {
   background-color: #6c757d; /* Different color for previous? */
 }
