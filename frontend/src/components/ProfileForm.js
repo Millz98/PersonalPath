@@ -171,7 +171,30 @@ const ProfileForm = () => {
           </VStack>
         );
 
-      // --- TODO: Add Cases 3 through 13 using Chakra components ---
+      // --- Step 3: Current Weight (Using Chakra UI) ---
+      case 3:
+        return (
+          <VStack spacing={4} align="stretch">
+            <FormControl isRequired> {/* Assuming weight is required */}
+              <FormLabel htmlFor="current_weight_kg">Current Weight (kg):</FormLabel>
+              <Input
+                id="current_weight_kg"
+                name="current_weight_kg"
+                type="number"
+                value={formData.current_weight_kg}
+                onChange={handleChange}
+                isDisabled={isDisabled}
+                placeholder="Enter current weight"
+                step="0.1" // Allow decimal input for weight
+              />
+              {/* Optional: Add validation message if needed */}
+              {/* <FormErrorMessage>Weight is required.</FormErrorMessage> */}
+            </FormControl>
+          </VStack>
+        );
+      // --- End Step 3 ---
+
+      // --- TODO: Add Cases 4 through 13 using Chakra components ---
 
       default:
         return <Box>Step {step} rendering not implemented yet (Chakra UI).</Box>;
