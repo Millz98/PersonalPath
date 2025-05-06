@@ -7,29 +7,28 @@ import { useAuth } from '../context/AuthContext'; // Keep if needed for logout l
 import {
   Box,
   Button,
-  Checkbox,
+  Checkbox, // Keep for later steps
   FormControl,
   FormLabel,
-  FormErrorMessage, // If using backend field validation display
+  FormErrorMessage, // Keep for later steps
   Input,
-  Select,
-  Textarea,
-  VStack, // For stacking elements within steps
+  Select, // Keep for later steps
+  Textarea, // Keep for later steps
+  VStack,
   Heading,
   Alert,
   AlertIcon,
   AlertDescription,
-  Progress, // For step progress indicator
-  Flex,     // For button layout
-  Spacer   // For button layout
+  Progress,
+  Flex,
+  Spacer
 } from '@chakra-ui/react';
 // --- End Chakra UI Imports ---
 
-// Keep custom CSS for potentially the container if needed, but minimize
-// import './ProfileForm.css';
+// import './ProfileForm.css'; // Can likely remove if not using custom overrides
 
 const ProfileForm = () => {
-  const { logout } = useAuth(); // Get logout if button remains here
+  const { logout } = useAuth(); // Get logout function
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     age: '',
@@ -56,28 +55,27 @@ const ProfileForm = () => {
 
   // --- Fetch Profile Data useEffect (Keep As Is) ---
   useEffect(() => {
-    // ... fetchProfileData logic remains the same ...
     const fetchProfileData = async () => {
-       setIsFetching(true); setFetchError(''); setSuccessMessage(''); setSubmitError('');
-       try {
-         const response = await axios.get('/api/users/profile/');
-         const profileData = response.data;
-         let updatedFormData = { ...formData };
-         for (const key in updatedFormData) {
-           if (profileData.hasOwnProperty(key)) {
-             const backendValue = profileData[key];
-             updatedFormData[key] = backendValue === null ? (typeof updatedFormData[key] === 'boolean' ? false : '') : backendValue;
-           }
-         }
-         setFormData(updatedFormData);
-       } catch (error) {
-         console.error('Failed to fetch profile data:', error.response ? error.response.data : error.message);
-         setFetchError('Failed to load your profile information. Please try refreshing the page.');
-       } finally {
-         setIsFetching(false);
-       }
-     };
-     fetchProfileData();
+      setIsFetching(true); setFetchError(''); setSuccessMessage(''); setSubmitError('');
+      try {
+        const response = await axios.get('/api/users/profile/');
+        const profileData = response.data;
+        let updatedFormData = { ...formData };
+        for (const key in updatedFormData) {
+          if (profileData.hasOwnProperty(key)) {
+            const backendValue = profileData[key];
+            updatedFormData[key] = backendValue === null ? (typeof updatedFormData[key] === 'boolean' ? false : '') : backendValue;
+          }
+        }
+        setFormData(updatedFormData);
+      } catch (error) {
+        console.error('Failed to fetch profile data:', error.response ? error.response.data : error.message);
+        setFetchError('Failed to load your profile information. Please try refreshing the page.');
+      } finally {
+        setIsFetching(false);
+      }
+    };
+    fetchProfileData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -87,23 +85,48 @@ const ProfileForm = () => {
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
+    // Special handling for Chakra Checkbox potentially needed if it doesn't use event.target.checked directly
+    // But standard input/select/textarea works like this:
     setFormData(prevFormData => ({
       ...prevFormData,
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
+  // --- Updated Form Submission Handler ---
   const handleSubmit = async (event) => {
-     // ... handleSubmit logic using axios.patch remains the same ...
-     event.preventDefault(); setSubmitError(''); setSuccessMessage(''); setIsSubmitting(true);
-     try {
-       await axios.patch('/api/users/profile/', formData);
-       setSuccessMessage('Profile updated successfully!');
-     } catch (error) { /*... improved error handling ...*/
-        console.error('Profile update error:', error.response ? error.response.data : error.message);
-        if (error.response && error.response.data) { /* ... parse errors ... */ setSubmitError('Update failed: ...');} else { setSubmitError('Update failed...'); }
-     } finally { setIsSubmitting(false); }
+    event.preventDefault();
+    setSubmitError('');
+    setSuccessMessage('');
+    setIsSubmitting(true);
+
+    try {
+      console.log("Submitting profile data:", formData);
+      const response = await axios.patch('/api/users/profile/', formData); // Using PATCH
+      console.log('Profile update response:', response.data); // Using response here
+      setSuccessMessage('Profile updated successfully!');
+    } catch (error) { // Full error handling
+      console.error('Profile update error:', error.response ? error.response.data : error.message);
+      if (error.response && error.response.data) {
+          const errors = error.response.data;
+          if (typeof errors === 'object' && errors !== null) {
+              const fieldErrorMessages = Object.entries(errors)
+                  .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(' ') : messages}`)
+                  .join('; ');
+              setSubmitError(`Update failed: ${fieldErrorMessages}`);
+          } else if (typeof errors === 'string') {
+              setSubmitError(`Update failed: ${errors}`);
+          } else {
+              setSubmitError('Update failed. An unexpected error format was received.');
+          }
+      } else {
+          setSubmitError('Update failed. Please check your connection and try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+  // --- End Updated Form Submission Handler ---
 
 
   // --- Refactored Rendering Logic ---
@@ -111,7 +134,6 @@ const ProfileForm = () => {
     const isDisabled = isFetching || isSubmitting;
 
     switch (step) {
-      // --- Step 1: Age (Using Chakra UI) ---
       case 1:
         return (
           <VStack spacing={4} align="stretch">
@@ -120,81 +142,51 @@ const ProfileForm = () => {
               <Input
                 id="age"
                 name="age"
-                type="number" // Use type="number"
+                type="number"
                 value={formData.age}
                 onChange={handleChange}
                 isDisabled={isDisabled}
-                // variant="outline" // Default variant
                 placeholder="Enter your age"
               />
               {/* <FormErrorMessage>Age is required.</FormErrorMessage> */}
             </FormControl>
           </VStack>
         );
-      // --- End Step 1 ---
+      case 2:
+        return (
+          <VStack spacing={4} align="stretch">
+            <FormControl isRequired isInvalid={/* Add field error check if needed */ false}>
+              <FormLabel htmlFor="height_cm">Height (cm):</FormLabel>
+              <Input
+                id="height_cm"
+                name="height_cm"
+                type="number"
+                value={formData.height_cm}
+                onChange={handleChange}
+                isDisabled={isDisabled}
+                placeholder="Enter height in centimeters"
+              />
+              {/* <FormErrorMessage>Height is required.</FormErrorMessage> */}
+            </FormControl>
+          </VStack>
+        );
 
-      // --- TODO: Add Cases 2 through 13 using Chakra components ---
-      // Example Structure for Text Input (e.g., Country - Step 4)
-      // case 4:
-      //   return (
-      //     <VStack spacing={4} align="stretch">
-      //       <FormControl isRequired>
-      //         <FormLabel htmlFor="country">Country:</FormLabel>
-      //         <Input id="country" name="country" value={formData.country} onChange={handleChange} isDisabled={isDisabled} />
-      //       </FormControl>
-      //     </VStack>
-      //   );
-
-       // Example Structure for Select (e.g., Activity Level - Step 12)
-       // case 12:
-       //  return (
-       //    <VStack spacing={4} align="stretch">
-       //      <FormControl>
-       //        <FormLabel htmlFor="activity_level">Activity Level:</FormLabel>
-       //        <Select id="activity_level" name="activity_level" value={formData.activity_level} onChange={handleChange} isDisabled={isDisabled}>
-       //          <option value="sedentary">Sedentary</option>
-       //          <option value="lightly_active">Lightly Active</option>
-       //          <option value="moderately_active">Moderately Active</option>
-       //          <option value="very_active">Very Active</option>
-       //          {/* Add extra_active if added to model */}
-       //        </Select>
-       //      </FormControl>
-       //    </VStack>
-       //  );
-
-       // Example for Checkbox (Step 7)
-       // case 7:
-       //  return (
-       //    <VStack spacing={4} align="stretch">
-       //      <FormControl>
-       //        {/* Note: Checkbox doesn't use FormLabel typically */}
-       //        <Checkbox
-       //           id="has_gym_membership"
-       //           name="has_gym_membership"
-       //           isChecked={formData.has_gym_membership} // Use isChecked
-       //           onChange={handleChange}
-       //           isDisabled={isDisabled}
-       //         >
-       //           Do you have a gym membership?
-       //         </Checkbox>
-       //      </FormControl>
-       //    </VStack>
-       //  );
-
+      // --- TODO: Add Cases 3 through 13 using Chakra components ---
 
       default:
         return <Box>Step {step} rendering not implemented yet (Chakra UI).</Box>;
-    }
-  };
+    } // <<< Closing brace for switch
+  }; // <<< Closing brace for renderForm function
   // --- End Refactored Rendering Logic ---
+
+  // --- **** REMOVED THE DUPLICATE EXAMPLE CODE BLOCK THAT WAS HERE **** ---
+
 
   // --- Main Component Return (Using Chakra UI) ---
   if (isFetching) {
-    // Optionally use Chakra Spinner
     return <Box p={5} textAlign="center">Loading your profile...</Box>;
   }
 
-  // Use Box as the main container
   return (
     <Box maxW="600px" mx="auto" mt={8} p={6} borderWidth="1px" borderRadius="lg" boxShadow="base">
       <Heading as="h2" size="lg" textAlign="center" mb={6}>
@@ -224,7 +216,7 @@ const ProfileForm = () => {
       )}
 
       {/* Progress Indicator */}
-      <Progress value={((step - 1) / (totalSteps - 1)) * 100} size="sm" colorScheme="teal" mb={6} />
+      <Progress value={((step - 1) / (totalSteps - 1)) * 100} size="sm" colorScheme="teal" mb={6} hasStripe isAnimated={isSubmitting} />
 
       {/* Form Content */}
       {!fetchError && (
@@ -236,8 +228,8 @@ const ProfileForm = () => {
               {step > 1 && (
                 <Button
                   onClick={prevStep}
-                  variant="outline" // Example variant
-                  isDisabled={isSubmitting}
+                  variant="outline"
+                  isDisabled={isSubmitting} // Only disable during submit
                 >
                   Previous
                 </Button>
@@ -246,8 +238,8 @@ const ProfileForm = () => {
               {step < totalSteps && (
                 <Button
                   onClick={nextStep}
-                  colorScheme="teal" // Example color
-                  isDisabled={isSubmitting}
+                  colorScheme="teal"
+                  isDisabled={isSubmitting} // Only disable during submit
                 >
                   Next
                 </Button>
@@ -255,10 +247,11 @@ const ProfileForm = () => {
               {step === totalSteps && (
                 <Button
                   type="submit"
-                  colorScheme="green" // Example color
+                  colorScheme="green"
                   isLoading={isSubmitting}
                   loadingText="Updating..."
-                  isDisabled={isFetching} // Should already be false here, but safe check
+                  // Disable submit if fetching (shouldn't happen) or submitting
+                  isDisabled={isFetching || isSubmitting}
                 >
                   Update Profile
                 </Button>
@@ -271,8 +264,8 @@ const ProfileForm = () => {
        <Box mt={8} pt={4} borderTopWidth="1px" textAlign="center">
          <Button
            onClick={logout}
-           variant="ghost" // Example variant
-           colorScheme="red" // Example color
+           variant="outline" // Changed variant for less emphasis
+           colorScheme="red"
          >
            Logout
          </Button>
@@ -280,6 +273,6 @@ const ProfileForm = () => {
 
     </Box> // End Main Container Box
   );
-};
+}; // <<< Closing brace for ProfileForm component
 
-export default ProfileForm;
+export default ProfileForm; // Export statement
