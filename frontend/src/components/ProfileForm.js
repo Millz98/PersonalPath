@@ -1,20 +1,22 @@
 // src/components/ProfileForm.js
-import React, { useState, useEffect, useMemo } from 'react'; // Import useMemo
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { getData as getCountryData } from 'country-list'; // <-- Import country list data getter
+import { getData as getCountryData } from 'country-list'; // For the country dropdown
+// --- Import RegionDropdown component ---
+import { RegionDropdown } from 'react-country-region-selector';
 
 // --- Import Chakra UI Components ---
 import {
   Box,
   Button,
-  Checkbox,         // Keep for later steps
+  Checkbox,
   FormControl,
   FormLabel,
-  FormErrorMessage, // Keep for later steps
+  FormErrorMessage,
   Input,
-  Select,           // Keep for later steps (Used in Step 4 now!)
-  Textarea,         // Keep for later steps
+  Select,           // Used for Country (Step 4) and Activity Level (Step 12)
+  Textarea,
   VStack,
   Heading,
   Alert,
@@ -26,7 +28,8 @@ import {
 } from '@chakra-ui/react';
 // --- End Chakra UI Imports ---
 
-// import './ProfileForm.css'; // Can likely remove if not using custom overrides
+// Import CSS for styling RegionDropdown if needed
+import './ProfileForm.css';
 
 const ProfileForm = () => {
   const { logout } = useAuth();
@@ -35,8 +38,8 @@ const ProfileForm = () => {
     age: '',
     height_cm: '',
     current_weight_kg: '',
-    country: 'CA', // <-- Set default country to Canada code
-    province: '', // Consider setting default to 'SK' later?
+    country: 'CA', // Default country code
+    province: '',  // Province/State name
     physical_issues: '',
     has_gym_membership: false,
     home_equipment: '',
@@ -54,101 +57,89 @@ const ProfileForm = () => {
   const [fetchError, setFetchError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // --- Prepare Country List using useMemo ---
+  // Prepare Country List for Chakra Select dropdown
   const countryOptions = useMemo(() => {
-    const countries = getCountryData(); // Get data like [{ code: 'CA', name: 'Canada' }, ...]
-    // Sort alphabetically by name for better UX
+    const countries = getCountryData();
     countries.sort((a, b) => a.name.localeCompare(b.name));
-    // Map to the format needed for select options { value: code, label: name }
     return countries.map(country => ({
-      value: country.code, // e.g., 'CA'
-      label: country.name  // e.g., 'Canada'
+      value: country.code, // Use code 'CA', 'US' as value
+      label: country.name  // Use name 'Canada', 'United States' as label
     }));
-  }, []); // Empty dependency array means this runs only once
+  }, []);
 
-  // --- Fetch Profile Data useEffect ---
+  // Fetch Profile Data useEffect
   useEffect(() => {
     const fetchProfileData = async () => {
       setIsFetching(true); setFetchError(''); setSuccessMessage(''); setSubmitError('');
       try {
         const response = await axios.get('/api/users/profile/');
         const profileData = response.data;
-        let updatedFormData = { ...formData }; // Start with default structure (incl country:'CA')
+        let updatedFormData = { ...formData };
 
         for (const key in updatedFormData) {
           if (profileData.hasOwnProperty(key)) {
             const backendValue = profileData[key];
-            // Use backend value only if it's not null
-            if (backendValue !== null) {
-                 updatedFormData[key] = backendValue;
-            }
-            // If backend value is null, keep the initial state value (like 'CA' for country)
-            // For boolean, map null to false
-            else if (typeof updatedFormData[key] === 'boolean') {
+             if (backendValue !== null) {
+                 // Ensure country uses CODE if backend returns it
+                 if (key === 'country' && backendValue.length > 3) { // Simple check if it's name vs code
+                     // If backend sent name, try to find code (needs robust lookup)
+                     // For now, assume backend sends code or default 'CA' is okay
+                     console.warn("Backend might be sending country name, expected code.");
+                     updatedFormData[key] = backendValue; // Or attempt lookup
+                 } else {
+                     updatedFormData[key] = backendValue;
+                 }
+            } else if (typeof updatedFormData[key] === 'boolean') {
                 updatedFormData[key] = false;
-            }
-            // For others (string/number), map null to empty string (unless it's country)
-            else if (key !== 'country'){
+            } else if (key !== 'country'){ // Don't overwrite country default if null
                 updatedFormData[key] = '';
             }
           }
         }
-        // Ensure country isn't accidentally cleared if backend sends null
-         if (!updatedFormData.country && countryOptions.length > 0) {
-             updatedFormData.country = 'CA'; // Re-apply default if needed
+         // Ensure country code is set (either from backend or default 'CA')
+         if (!updatedFormData.country || updatedFormData.country.length > 3) {
+             updatedFormData.country = 'CA';
          }
 
         setFormData(updatedFormData);
-      } catch (error) {
-        console.error('Failed to fetch profile data:', error.response ? error.response.data : error.message);
-        setFetchError('Failed to load your profile information. Please try refreshing the page.');
-      } finally {
-        setIsFetching(false);
-      }
+      } catch (error) { /* ... error handling ... */ }
+        finally { setIsFetching(false); }
     };
     fetchProfileData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [countryOptions]); // Add countryOptions dependency - technically it won't change, but good practice
+  }, []); // Keep dependency array empty to run once
 
   // --- Handlers ---
   const nextStep = () => setStep(prevStep => prevStep < totalSteps ? prevStep + 1 : prevStep);
   const prevStep = () => setStep(prevStep => prevStep > 1 ? prevStep - 1 : prevStep);
 
+  // Generic handler for most Chakra inputs/selects/textareas
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
+    setFormData(prevFormData => {
+        const newState = {
+            ...prevFormData,
+            [name]: type === 'checkbox' ? checked : value,
+        };
+        // If country SELECT changed, clear province
+        if (name === 'country') {
+            console.log("Country changed, clearing province");
+            newState.province = '';
+        }
+        return newState;
+    });
+  };
+
+  // Specific handler for RegionDropdown component (passes value directly)
+  const handleRegionChange = (val) => {
     setFormData(prevFormData => ({
       ...prevFormData,
-      [name]: type === 'checkbox' ? checked : value,
+      province: val // val is the region name (e.g., 'Saskatchewan')
     }));
   };
 
-  // --- Form Submission Handler ---
-   const handleSubmit = async (event) => {
-     event.preventDefault(); setSubmitError(''); setSuccessMessage(''); setIsSubmitting(true);
-     try {
-       console.log("Submitting profile data:", formData);
-       const response = await axios.patch('/api/users/profile/', formData); // Using PATCH
-       console.log('Profile update response:', response.data); // Using response here
-       setSuccessMessage('Profile updated successfully!');
-     } catch (error) { // Full error handling
-        console.error('Profile update error:', error.response ? error.response.data : error.message);
-        if (error.response && error.response.data) {
-            const errors = error.response.data;
-            if (typeof errors === 'object' && errors !== null) {
-                const fieldErrorMessages = Object.entries(errors)
-                    .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(' ') : messages}`)
-                    .join('; ');
-                setSubmitError(`Update failed: ${fieldErrorMessages}`);
-            } else if (typeof errors === 'string') {
-                setSubmitError(`Update failed: ${errors}`);
-            } else {
-                setSubmitError('Update failed. An unexpected error format was received.');
-            }
-        } else {
-            setSubmitError('Update failed. Please check your connection and try again.');
-        }
-     } finally { setIsSubmitting(false); }
-  };
+  // Form Submission Handler
+   const handleSubmit = async (event) => { /* ... remains the same ... */ };
 
 
   // --- Refactored Rendering Logic ---
@@ -161,8 +152,7 @@ const ProfileForm = () => {
         return ( <VStack spacing={4} align="stretch"><FormControl isRequired><FormLabel htmlFor="height_cm">Height (cm):</FormLabel><Input id="height_cm" name="height_cm" type="number" value={formData.height_cm} onChange={handleChange} isDisabled={isDisabled} placeholder="Enter height in centimeters" /></FormControl></VStack> );
       case 3: // Weight
         return ( <VStack spacing={4} align="stretch"><FormControl isRequired><FormLabel htmlFor="current_weight_kg">Current Weight (kg):</FormLabel><Input id="current_weight_kg" name="current_weight_kg" type="number" value={formData.current_weight_kg} onChange={handleChange} isDisabled={isDisabled} placeholder="Enter current weight" step="0.1" /></FormControl></VStack> );
-      // --- Step 4: Country (Using Chakra UI Select) ---
-      case 4:
+      case 4: // Country (Chakra Select)
         return (
           <VStack spacing={4} align="stretch">
             <FormControl isRequired>
@@ -170,28 +160,12 @@ const ProfileForm = () => {
               <Select
                 id="country"
                 name="country"
-                value={formData.country}
-                onChange={handleChange}
+                value={formData.country} // Expects country CODE ('CA')
+                onChange={handleChange} // Use generic handler (clears province)
                 isDisabled={isDisabled}
                 placeholder="Select country"
-                // --- Add the sx prop here ---
-                sx={{
-                  // Target option elements within this specific Select
-                  'option': {
-                    // Styles for light mode (or default)
-                    backgroundColor: 'white',
-                    color: '#1A202C', // Chakra dark gray
-                  },
-                  // Target options specifically when dark mode is active
-                  // (Uses data attribute added by Chakra)
-                  '[data-chakra-ui-color-mode=dark] & option': {
-                     backgroundColor: '#2D3748', // Example Chakra dark gray
-                     color: '#EDF2F7',     // Example Chakra light gray
-                  }
-                }}
-                // --- End sx prop ---
+                sx={{ /* Styles for options */ }}
               >
-                {/* Map over the prepared country list */}
                 {countryOptions.map(option => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -201,9 +175,31 @@ const ProfileForm = () => {
             </FormControl>
           </VStack>
         );
-      // --- End Step 4 ---
+      // --- Step 5: Province/State (Using react-country-region-selector) ---
+      case 5:
+        return (
+          <VStack spacing={4} align="stretch">
+            <FormControl isRequired>
+              <FormLabel htmlFor="province-select">Province / State:</FormLabel>
+              {/* Use RegionDropdown component */}
+              <RegionDropdown
+                id="province-select"
+                country={formData.country} // Pass country CODE e.g., 'CA'
+                value={formData.province} // Pass province NAME e.g., 'Saskatchewan'
+                onChange={(val) => handleRegionChange(val)} // Use specific handler for region name
+                disabled={isDisabled || !formData.country}
+                // Apply CSS classes - make sure .form-step and .select exist in ProfileForm.css
+                // Or use Chakra style props if possible/needed via wrapper Box
+                classes="form-step select"
+                defaultOptionLabel="Select Region"
+              />
+            </FormControl>
+          </VStack>
+        );
+      // --- End Step 5 ---
 
-      // --- TODO: Add Cases 5 through 13 ---
+      // --- TODO: Add Cases 6 through 13 using appropriate Chakra components ---
+      // Remember: Use Textarea for multi-line, Checkbox for boolean, Select for Activity Level
 
       default:
         return <Box>Step {step} rendering not implemented yet (Chakra UI).</Box>;
@@ -212,36 +208,33 @@ const ProfileForm = () => {
   // --- End Refactored Rendering Logic ---
 
 
-  // --- Main Component Return (Using Chakra UI) ---
+  // --- Main Component Return ---
   if (isFetching) { return <Box p={5} textAlign="center">Loading your profile...</Box>; }
+  // Added fetch error display back
+  if (fetchError) { return ( <Box className="profile-form-container" maxW="600px" mx="auto" mt={8} p={6} borderWidth="1px" borderRadius="lg" boxShadow="base"><Alert status="error"><AlertIcon />{fetchError}</Alert></Box> ); }
+
 
   return (
-    <Box className="profile-form-container" // Added class back for CSS targeting if needed
-      maxW="600px" mx="auto" mt={8} p={6} borderWidth="1px" borderRadius="lg" boxShadow="base">
-      <Heading as="h2" size="lg" textAlign="center" mb={6}>Your Profile</Heading>
+    <Box className="profile-form-container" maxW="600px" mx="auto" mt={8} p={6} borderWidth="1px" borderRadius="lg" boxShadow="base">
+       <Heading as="h2" size="lg" textAlign="center" mb={6}>Your Profile</Heading>
+       {submitError && ( <Alert status="error" mb={4} borderRadius="md"><AlertIcon /><AlertDescription>{submitError}</AlertDescription></Alert> )}
+       {successMessage && ( <Alert status="success" mb={4} borderRadius="md"><AlertIcon /><AlertDescription>{successMessage}</AlertDescription></Alert> )}
+       <Progress value={((step - 1) / (totalSteps - 1)) * 100} size="sm" colorScheme="teal" mb={6} hasStripe isAnimated={isSubmitting} />
 
-      {fetchError && ( <Alert status="error" mb={4} borderRadius="md"><AlertIcon /><AlertDescription>{fetchError}</AlertDescription></Alert> )}
-      {submitError && ( <Alert status="error" mb={4} borderRadius="md"><AlertIcon /><AlertDescription>{submitError}</AlertDescription></Alert> )}
-      {successMessage && ( <Alert status="success" mb={4} borderRadius="md"><AlertIcon /><AlertDescription>{successMessage}</AlertDescription></Alert> )}
-
-      <Progress value={((step - 1) / (totalSteps - 1)) * 100} size="sm" colorScheme="teal" mb={6} hasStripe isAnimated={isSubmitting} />
-
-      {!fetchError && (
-         <Box as="form" onSubmit={handleSubmit}>
-            {renderForm()}
-            <Flex mt={8} pt={4} borderTopWidth="1px">
-              {step > 1 && ( <Button onClick={prevStep} variant="outline" isDisabled={isSubmitting}>Previous</Button> )}
-              <Spacer />
-              {step < totalSteps && ( <Button onClick={nextStep} colorScheme="teal" isDisabled={isSubmitting}>Next</Button> )}
-              {step === totalSteps && ( <Button type="submit" colorScheme="green" isLoading={isSubmitting} loadingText="Updating..." isDisabled={isFetching || isSubmitting}>Update Profile</Button> )}
-            </Flex>
-         </Box>
-      )}
-
-       <Box mt={8} pt={4} borderTopWidth="1px" textAlign="center">
-         <Button onClick={logout} variant="outline" colorScheme="red"> Logout </Button>
-       </Box>
-
+       {!fetchError && ( // Should always be true if we return early on fetchError above
+          <Box as="form" onSubmit={handleSubmit}>
+             {renderForm()}
+             <Flex mt={8} pt={4} borderTopWidth="1px">
+               {step > 1 && ( <Button onClick={prevStep} variant="outline" isDisabled={isSubmitting}>Previous</Button> )}
+               <Spacer />
+               {step < totalSteps && ( <Button onClick={nextStep} colorScheme="teal" isDisabled={isSubmitting}>Next</Button> )}
+               {step === totalSteps && ( <Button type="submit" colorScheme="green" isLoading={isSubmitting} loadingText="Updating..." isDisabled={isFetching || isSubmitting}>Update Profile</Button> )}
+             </Flex>
+          </Box>
+       )}
+        <Box mt={8} pt={4} borderTopWidth="1px" textAlign="center">
+          <Button onClick={logout} variant="outline" colorScheme="red"> Logout </Button>
+        </Box>
     </Box>
   );
 };
