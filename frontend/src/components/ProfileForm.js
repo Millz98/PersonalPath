@@ -247,7 +247,7 @@ const ProfileForm = () => {
           <Box as="form" onSubmit={handleSubmit}>
              {renderForm()}
              <Flex mt={8} pt={4} borderTopWidth="1px">
-               {step > 1 && ( <Button onClick={prevStep} variant="outline" isDisabled={isSubmitting}>Previous</Button> )}
+               {step > 1 && ( <Button onClick={prevStep} variant="outline" colorScheme="teal" isDisabled={isSubmitting}>Previous</Button> )}
                <Spacer />
                {step < totalSteps && ( <Button onClick={nextStep} colorScheme="teal" isDisabled={isSubmitting}>Next</Button> )}
                {step === totalSteps && ( <Button type="submit" colorScheme="green" isLoading={isSubmitting} loadingText="Updating..." isDisabled={isFetching || isSubmitting}>Update Profile</Button> )}
