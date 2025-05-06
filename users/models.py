@@ -10,6 +10,7 @@ class UserProfile(models.Model):
     current_weight_kg = models.FloatField()
     country = models.CharField(max_length=100)
     province = models.CharField(max_length=100)
+    city = models.CharField(max_length=100, null=True, blank=True)
 
     # Physical Considerations (using a TextField for flexibility, can be refined later)
     physical_issues = models.TextField(blank=True, null=True)
