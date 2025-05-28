@@ -40,6 +40,7 @@ const ProfileForm = () => {
     current_weight_kg: '',
     country: 'CA', // Default country code
     province: '',  // Province/State name
+    city: '',
     physical_issues: '',
     has_gym_membership: false,
     home_equipment: '',
@@ -52,7 +53,7 @@ const ProfileForm = () => {
   });
   const [submitError, setSubmitError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const totalSteps = 13;
+  const totalSteps = 14;
   const [isFetching, setIsFetching] = useState(true);
   const [fetchError, setFetchError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
