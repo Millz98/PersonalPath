@@ -25,7 +25,10 @@ import {
   Progress,
   Flex,
   Spacer,
-  Text
+  Text,
+  Radio,
+  RadioGroup,
+  HStack 
 } from '@chakra-ui/react';
 // --- End Chakra UI Imports ---
 
@@ -155,6 +158,13 @@ const ProfileForm = () => {
     });
   };
   
+  const handleRadioChange = (name, nextValue) => {
+    setFormData(prevFormData => ({
+      ...prevFormData,
+      [name]: nextValue === 'true' // Convert string "true" to boolean true, otherwise false
+    }));
+  };
+
   // --- Form Submission Handler ---
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -256,7 +266,10 @@ const ProfileForm = () => {
                   onChange={handleChange} // Use generic handleChange
                   isDisabled={isDisabled || !formData.country || provinceOptions.length === 0}
                   placeholder={!formData.country ? "Select a country first" : (provinceOptions.length > 0 ? "Select province/state" : "N/A for selected country")}
-                  sx={{ /* ... sx prop for option styling ... */ }}
+                  sx={{
+                    'option': { backgroundColor: 'white', color: '#1A202C'}, // For light mode
+                    '[data-chakra-ui-color-mode=dark] & option': { backgroundColor: 'gray.700', color: 'whiteAlpha.900'} // Or your dark mode colors
+                  }}
                 >
                   {/* Map over the dynamically generated provinceOptions state */}
                   {provinceOptions.map(option => (
@@ -304,20 +317,36 @@ const ProfileForm = () => {
             </FormControl>
           </VStack>
         );
-      case 8: // Gym Membership (Checkbox)
+      // --- Step 8 (Previously 7): Gym Membership (Using Chakra UI RadioGroup) ---
+      case 8:
         return (
           <VStack spacing={4} align="stretch">
-            <FormControl>
-              <Checkbox
-                id="has_gym_membership" name="has_gym_membership"
-                isChecked={formData.has_gym_membership} onChange={handleChange}
-                isDisabled={isDisabled} size="lg" colorScheme="teal" // Checkbox styling
-              >
+            <FormControl as="fieldset"> {/* Use as="fieldset" for radio groups for accessibility */}
+              <FormLabel as="legend"> {/* Use as="legend" for the label of a radio group */}
                 Do you have a gym membership?
-              </Checkbox>
+              </FormLabel>
+              <RadioGroup
+                name="has_gym_membership"
+                // Pass the string version of the boolean state
+                value={String(formData.has_gym_membership)}
+                // Use the specific handler
+                onChange={(nextValue) => handleRadioChange("has_gym_membership", nextValue)}
+                isDisabled={isDisabled}
+              >
+                <HStack spacing={5}> {/* Layout radio buttons horizontally */}
+                  <Radio value="true" colorScheme="teal"> {/* String value "true" */}
+                    Yes
+                  </Radio>
+                  <Radio value="false" colorScheme="red"> {/* String value "false" */}
+                    No
+                  </Radio>
+                </HStack>
+              </RadioGroup>
+              {/* <FormHelperText>Select one option.</FormHelperText> */}
             </FormControl>
           </VStack>
         );
+      // --- End Step 8 ---
 
       // --- Step 9 (Previously 8): Home Equipment (Using Chakra UI Textarea) ---
       case 9:
