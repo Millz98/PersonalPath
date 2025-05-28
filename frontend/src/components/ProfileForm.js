@@ -24,7 +24,8 @@ import {
   AlertDescription,
   Progress,
   Flex,
-  Spacer
+  Spacer,
+  Text
 } from '@chakra-ui/react';
 // --- End Chakra UI Imports ---
 
@@ -34,6 +35,7 @@ import './ProfileForm.css';
 const ProfileForm = () => {
   const { logout } = useAuth();
   const [step, setStep] = useState(1);
+  const [provinceOptions, setProvinceOptions] = useState([]);
   const [formData, setFormData] = useState({
     age: '',
     height_cm: '',
@@ -110,37 +112,90 @@ const ProfileForm = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Keep dependency array empty to run once
 
+  // --- useEffect to update Provinces when Country changes ---
+  useEffect(() => {
+    // Check if formData.country has a value (a 2-letter code like 'CA')
+    if (formData.country && formData.country.length === 2) {
+      console.log(`Fetching states for country code: ${formData.country}`);
+      // Get states for the selected country code
+      const states = State.getStatesOfCountry(formData.country); // Uses 'State' import
+      // Format for Chakra Select options: value=name, label=name
+      const options = states.map(state => ({
+        value: state.name, // Storing full name for simplicity
+        label: state.name
+      }));
+      setProvinceOptions(options); // Uses 'setProvinceOptions'
+      console.log(`Found ${options.length} states/provinces for ${formData.country}.`);
+    } else {
+      // Clear options if no valid country code is selected
+      console.log("Clearing province options due to invalid/missing country code.");
+      setProvinceOptions([]); // Uses 'setProvinceOptions'
+    }
+  }, [formData.country]); // Rerun ONLY when the country code changes
+
   // --- Handlers ---
   const nextStep = () => setStep(prevStep => prevStep < totalSteps ? prevStep + 1 : prevStep);
   const prevStep = () => setStep(prevStep => prevStep > 1 ? prevStep - 1 : prevStep);
 
-  // Generic handler for most Chakra inputs/selects/textareas
-  const handleChange = (event) => {
+   // Generic handler for most Chakra inputs/selects/textareas
+   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
     setFormData(prevFormData => {
         const newState = {
             ...prevFormData,
             [name]: type === 'checkbox' ? checked : value,
         };
-        // If country SELECT changed, clear province
+        // If country SELECT changed, clear province state AND options
         if (name === 'country') {
-            console.log("Country changed, clearing province");
+            console.log("Country changed via handleChange, clearing province and options.");
             newState.province = '';
+            setProvinceOptions([]); // <<< Uses 'setProvinceOptions'
         }
         return newState;
     });
   };
+  
+  // --- Form Submission Handler ---
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSubmitError('');
+    setSuccessMessage('');
+    setIsSubmitting(true); // Set loading state
 
-  // Specific handler for RegionDropdown component (passes value directly)
-  const handleRegionChange = (val) => {
-    setFormData(prevFormData => ({
-      ...prevFormData,
-      province: val // val is the region name (e.g., 'Saskatchewan')
-    }));
+    try {
+      console.log("Submitting profile data:", formData);
+      // Use PATCH request
+      const response = await axios.patch('/api/users/profile/', formData);
+      // Use the response variable (e.g., for logging)
+      console.log('Profile update response:', response.data);
+      setSuccessMessage('Profile updated successfully!');
+
+    } catch (error) { // Use the full error handling block
+      console.error('Profile update error:', error.response ? error.response.data : error.message);
+      if (error.response && error.response.data) {
+          const errors = error.response.data;
+          // Handle DRF object errors
+          if (typeof errors === 'object' && errors !== null) {
+              const fieldErrorMessages = Object.entries(errors)
+                  .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(' ') : messages}`)
+                  .join('; ');
+              setSubmitError(`Update failed: ${fieldErrorMessages}`);
+          // Handle simple string errors
+          } else if (typeof errors === 'string') {
+              setSubmitError(`Update failed: ${errors}`);
+          // Handle other unexpected formats
+          } else {
+              setSubmitError('Update failed. An unexpected error format was received.');
+          }
+      } else {
+          // Handle network errors etc.
+          setSubmitError('Update failed. Please check your connection and try again.');
+      }
+    } finally {
+      setIsSubmitting(false); // Ensure loading state is turned off
+    }
   };
-
-  // Form Submission Handler
-   const handleSubmit = async (event) => { /* ... remains the same ... */ };
+  // --- End Form Submission Handler ---
 
 
   // --- Refactored Rendering Logic ---
@@ -189,44 +244,34 @@ const ProfileForm = () => {
             </FormControl>
           </VStack>
         );
-      case 5: // Province/State (Chakra Select)
-        return (
-          <VStack spacing={4} align="stretch">
-            <FormControl isRequired>
-              <FormLabel htmlFor="province">Province / State:</FormLabel>
-              <Select
-                id="province" // Changed from province-select for consistency with name
-                name="province" // Add name prop for handleChange
-                value={formData.province}
-                onChange={handleChange} // Use standard handleChange now
-                isDisabled={isDisabled || !formData.country || provinceOptions.length === 0}
-                placeholder={!formData.country ? "Select a country first" : (provinceOptions.length > 0 ? "Select province/state" : "N/A")}
-                bg="black" // Your style
-                color="white" // Your style
-                sx={{
-                  option: {
-                    bg: "white",
-                    color: "black",
-                    _hover: { bg: "gray.100" }
-                  },
-                  '[data-chakra-ui-color-mode=dark] & option': {
-                     bg: "gray.700",
-                     color: "whiteAlpha.900"
-                  }
-                }}
-              >
-                {provinceOptions.map((state) => ( // Changed from option to state for clarity
-                  <option key={state.value} value={state.value}> {/* Assuming provinceOptions stores {value, label} */}
-                    {state.label}
-                  </option>
-                ))}
-              </Select>
-              {provinceOptions.length === 0 && formData.country && !isFetching &&
-                <FormErrorMessage>No provinces/states found for selected country.</FormErrorMessage>
-              }
-            </FormControl>
-          </VStack>
-        );
+        case 5:
+          return (
+            <VStack spacing={4} align="stretch">
+              <FormControl isRequired>
+                <FormLabel htmlFor="province">Province / State:</FormLabel> {/* Use name "province" for label */}
+                <Select
+                  id="province" // Match name
+                  name="province" // For handleChange
+                  value={formData.province}
+                  onChange={handleChange} // Use generic handleChange
+                  isDisabled={isDisabled || !formData.country || provinceOptions.length === 0}
+                  placeholder={!formData.country ? "Select a country first" : (provinceOptions.length > 0 ? "Select province/state" : "N/A for selected country")}
+                  sx={{ /* ... sx prop for option styling ... */ }}
+                >
+                  {/* Map over the dynamically generated provinceOptions state */}
+                  {provinceOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+                {provinceOptions.length === 0 && formData.country && !isFetching && !isSubmitting &&
+                  <Text fontSize="sm" color="gray.500" mt={1}>No provinces/states listed for this country.</Text>
+                }
+              </FormControl>
+            </VStack>
+          );
+        // --- End Step 5 ---
       case 6: // City/Town (Chakra UI Input)
         return (
           <VStack spacing={4} align="stretch">
