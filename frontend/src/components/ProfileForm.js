@@ -148,11 +148,11 @@ const ProfileForm = () => {
     const isDisabled = isFetching || isSubmitting;
     switch (step) {
       case 1: // Age
-        return ( <VStack spacing={4} align="stretch"><FormControl isRequired><FormLabel htmlFor="age">Age:</FormLabel><Input id="age" name="age" type="number" value={formData.age} onChange={handleChange} isDisabled={isDisabled} placeholder="Enter your age" /></FormControl></VStack> );
+        return ( <VStack spacing={4} align="stretch"><FormControl isRequired><FormLabel htmlFor="age">Age:</FormLabel><Input id="age" name="age" type="number" value={formData.age} onChange={handleChange} isDisabled={isDisabled} placeholder="Enter your age" /* bg="black" color="white" etc. if desired */ /></FormControl></VStack> );
       case 2: // Height
-        return ( <VStack spacing={4} align="stretch"><FormControl isRequired><FormLabel htmlFor="height_cm">Height (cm):</FormLabel><Input id="height_cm" name="height_cm" type="number" value={formData.height_cm} onChange={handleChange} isDisabled={isDisabled} placeholder="Enter height in centimeters" /></FormControl></VStack> );
+        return ( <VStack spacing={4} align="stretch"><FormControl isRequired><FormLabel htmlFor="height_cm">Height (cm):</FormLabel><Input id="height_cm" name="height_cm" type="number" value={formData.height_cm} onChange={handleChange} isDisabled={isDisabled} placeholder="Enter height in centimeters" /* bg="black" color="white" etc. if desired */ /></FormControl></VStack> );
       case 3: // Weight
-        return ( <VStack spacing={4} align="stretch"><FormControl isRequired><FormLabel htmlFor="current_weight_kg">Current Weight (kg):</FormLabel><Input id="current_weight_kg" name="current_weight_kg" type="number" value={formData.current_weight_kg} onChange={handleChange} isDisabled={isDisabled} placeholder="Enter current weight" step="0.1" /></FormControl></VStack> );
+        return ( <VStack spacing={4} align="stretch"><FormControl isRequired><FormLabel htmlFor="current_weight_kg">Current Weight (kg):</FormLabel><Input id="current_weight_kg" name="current_weight_kg" type="number" value={formData.current_weight_kg} onChange={handleChange} isDisabled={isDisabled} placeholder="Enter current weight" step="0.1" /* bg="black" color="white" etc. if desired */ /></FormControl></VStack> );
       case 4: // Country (Chakra Select)
         return (
           <VStack spacing={4} align="stretch">
@@ -165,15 +165,18 @@ const ProfileForm = () => {
                 onChange={handleChange} // Use generic handler (clears province)
                 isDisabled={isDisabled}
                 placeholder="Select country"
-                bg="black"
-                color="white"
+                bg="black" // Your style
+                color="white" // Your style
                 sx={{
                   option: {
-                    bg: "white",
+                    bg: "white", // Options light for readability
                     color: "black",
-                    _hover: {
-                      bg: "gray.100"
-                    }
+                    _hover: { bg: "gray.100" }
+                  },
+                  // Ensure dark mode options are also readable if you implement dark mode
+                  '[data-chakra-ui-color-mode=dark] & option': {
+                     bg: "gray.700", // Dark mode option background
+                     color: "whiteAlpha.900"  // Dark mode option text
                   }
                 }}
               >
@@ -186,49 +189,133 @@ const ProfileForm = () => {
             </FormControl>
           </VStack>
         );
-      // --- Step 5: Province/State (Using react-country-region-selector) ---
-      case 5:
+      case 5: // Province/State (Chakra Select)
         return (
           <VStack spacing={4} align="stretch">
             <FormControl isRequired>
-              <FormLabel htmlFor="province-select">Province / State:</FormLabel>
+              <FormLabel htmlFor="province">Province / State:</FormLabel>
               <Select
-                id="province-select"
+                id="province" // Changed from province-select for consistency with name
+                name="province" // Add name prop for handleChange
                 value={formData.province}
-                onChange={(e) => handleRegionChange(e.target.value)}
-                isDisabled={isDisabled || !formData.country}
-                placeholder="Select Region"
-                bg="black"
-                color="white"
+                onChange={handleChange} // Use standard handleChange now
+                isDisabled={isDisabled || !formData.country || provinceOptions.length === 0}
+                placeholder={!formData.country ? "Select a country first" : (provinceOptions.length > 0 ? "Select province/state" : "N/A")}
+                bg="black" // Your style
+                color="white" // Your style
                 sx={{
                   option: {
                     bg: "white",
                     color: "black",
-                    _hover: {
-                      bg: "gray.100"
-                    }
+                    _hover: { bg: "gray.100" }
+                  },
+                  '[data-chakra-ui-color-mode=dark] & option': {
+                     bg: "gray.700",
+                     color: "whiteAlpha.900"
                   }
                 }}
               >
-                {State.getStatesOfCountry(formData.country).map((state) => (
-                  <option key={state.isoCode} value={state.name}>
-                    {state.name}
+                {provinceOptions.map((state) => ( // Changed from option to state for clarity
+                  <option key={state.value} value={state.value}> {/* Assuming provinceOptions stores {value, label} */}
+                    {state.label}
                   </option>
                 ))}
               </Select>
+              {provinceOptions.length === 0 && formData.country && !isFetching &&
+                <FormErrorMessage>No provinces/states found for selected country.</FormErrorMessage>
+              }
             </FormControl>
           </VStack>
         );
-      // --- End Step 5 ---
+      case 6: // City/Town (Chakra UI Input)
+        return (
+          <VStack spacing={4} align="stretch">
+            <FormControl isRequired>
+              <FormLabel htmlFor="city">City / Town:</FormLabel>
+              <Input
+                id="city" name="city" type="text"
+                value={formData.city} onChange={handleChange}
+                isDisabled={isDisabled || !formData.province}
+                placeholder="Enter your city or town"
+                // Add your styling props if desired
+                // bg="black" color="white" borderColor="gray.600" ...
+              />
+            </FormControl>
+          </VStack>
+        );
+      case 7: // Physical Issues (Textarea)
+        return (
+          <VStack spacing={4} align="stretch">
+            <FormControl>
+              <FormLabel htmlFor="physical_issues">Physical Issues / Limitations:</FormLabel>
+              <Textarea
+                id="physical_issues" name="physical_issues"
+                value={formData.physical_issues} onChange={handleChange}
+                isDisabled={isDisabled}
+                placeholder="e.g., Bad knees, lower back pain..."
+                // Add your styling props if desired
+                // bg="black" color="white" borderColor="gray.600" ...
+              />
+            </FormControl>
+          </VStack>
+        );
+      case 8: // Gym Membership (Checkbox)
+        return (
+          <VStack spacing={4} align="stretch">
+            <FormControl>
+              <Checkbox
+                id="has_gym_membership" name="has_gym_membership"
+                isChecked={formData.has_gym_membership} onChange={handleChange}
+                isDisabled={isDisabled} size="lg" colorScheme="teal" // Checkbox styling
+              >
+                Do you have a gym membership?
+              </Checkbox>
+            </FormControl>
+          </VStack>
+        );
 
-      // --- TODO: Add Cases 6 through 13 using appropriate Chakra components ---
-      // Remember: Use Textarea for multi-line, Checkbox for boolean, Select for Activity Level
+      // --- Step 9 (Previously 8): Home Equipment (Using Chakra UI Textarea) ---
+      case 9:
+        return (
+          <VStack spacing={4} align="stretch">
+            <FormControl> {/* Optional field */}
+              <FormLabel htmlFor="home_equipment">
+                Home Fitness Equipment:
+              </FormLabel>
+              <Textarea
+                id="home_equipment"
+                name="home_equipment"
+                value={formData.home_equipment}
+                onChange={handleChange}
+                isDisabled={isDisabled}
+                placeholder="e.g., Dumbbells, resistance bands, yoga mat, treadmill..."
+                size="md"
+                // --- Add your styling props to match other inputs ---
+                // Example:
+                // bg="black"
+                // color="white"
+                // borderColor="gray.600" // Example border for dark input on dark theme
+                // _hover={{ borderColor: "gray.500" }}
+                // _focus={{ borderColor: "teal.500", boxShadow: "0 0 0 1px teal.500" }}
+                // --- End styling props ---
+              />
+            </FormControl>
+          </VStack>
+        );
+      // --- End Step 9 ---
+
+      // --- TODO: Add Cases 10 through 14 ---
+      // Step 10 (Prev 9): dietary_preferences (Input)
+      // Step 11 (Prev 10): food_allergies (Textarea)
+      // Step 12 (Prev 11): disliked_foods (Textarea)
+      // Step 13 (Prev 12): activity_level (Select)
+      // Step 14 (Prev 13): weight_loss_goal_kg (Input), desired_loss_rate (Input)
 
       default:
         return <Box>Step {step} rendering not implemented yet (Chakra UI).</Box>;
     }
   };
-  // --- End Refactored Rendering Logic ---
+// --- End Refactored Rendering Logic ---
 
 
   // --- Main Component Return ---
