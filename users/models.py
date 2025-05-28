@@ -11,6 +11,9 @@ class UserProfile(models.Model):
     country = models.CharField(max_length=100)
     province = models.CharField(max_length=100)
     city = models.CharField(max_length=100, null=True, blank=True)
+    has_gym_membership = models.BooleanField(default=False)
+    gym_details = models.TextField(null=True, blank=True) # <-- NEW FIELD
+    home_equipment = models.TextField(blank=True, null=True)
 
     # Physical Considerations (using a TextField for flexibility, can be refined later)
     physical_issues = models.TextField(blank=True, null=True)
