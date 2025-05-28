@@ -48,6 +48,7 @@ const ProfileForm = () => {
     city: '',
     physical_issues: '',
     has_gym_membership: false,
+    gym_details: '',
     home_equipment: '',
     dietary_preferences: '',
     food_allergies: '',
@@ -58,7 +59,7 @@ const ProfileForm = () => {
   });
   const [submitError, setSubmitError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const totalSteps = 14;
+  const totalSteps = 15;
   const [isFetching, setIsFetching] = useState(true);
   const [fetchError, setFetchError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -159,12 +160,18 @@ const ProfileForm = () => {
   };
   
   const handleRadioChange = (name, nextValue) => {
-    setFormData(prevFormData => ({
-      ...prevFormData,
-      [name]: nextValue === 'true' // Convert string "true" to boolean true, otherwise false
-    }));
+    const booleanValue = nextValue === 'true';
+    setFormData(prevFormData => {
+      const newState = {
+        ...prevFormData,
+        [name]: booleanValue
+      };
+      if (name === 'has_gym_membership' && !booleanValue) {
+        newState.gym_details = ''; // Clear gym details if "No"
+      }
+      return newState;
+    });
   };
-
   // --- Form Submission Handler ---
   const handleSubmit = async (event) => {
     event.preventDefault();
